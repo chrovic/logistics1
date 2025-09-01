@@ -274,6 +274,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof window.reinitializeCustomDatepickers === 'function') {
                         window.reinitializeCustomDatepickers();
                     }
+                    
+                    // Reinitialize admin notifications AFTER DOM is ready
+                    if (typeof window.initAdminNotifications === 'function') {
+                        console.log('Reinitializing admin notifications after PJAX...');
+                        window.initAdminNotifications();
+                    }
                 });
                 // Call page-specific initializer based on target URL (run defensively twice for timing)
                 try {

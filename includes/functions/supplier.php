@@ -167,6 +167,12 @@ function registerSupplier($data, $file) {
                 error_log("File upload error code: " . $file['error'] . " for supplier ID: $supplier_id");
             }
         }
+        
+        // Create notification for admin and procurement users about new supplier registration
+        require_once __DIR__ . '/notifications.php';
+        $notification_message = "New supplier registration: '{$data['supplier_name']}' by {$data['contact_person']} is pending verification.";
+        createAdminNotification($notification_message, 'info', $supplier_id, 'supplier');
+        
         $conn->commit();
         return true;
     } catch (mysqli_sql_exception $e) {

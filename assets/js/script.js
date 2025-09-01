@@ -233,6 +233,7 @@ window.showCustomConfirm = function(options = {}) {
         cancelText = 'Cancel',
         icon = 'alert-triangle',
         iconColor = 'text-yellow-500',
+        iconSize = 'w-36 h-36',
         confirmButtonClass = 'btn-primary-danger',
         onConfirm = () => {},
         onCancel = () => {}
@@ -252,7 +253,12 @@ window.showCustomConfirm = function(options = {}) {
 
     // Set content
     titleElement.textContent = title;
-    messageElement.textContent = message;
+    // Support HTML in message content for formatting
+    if (message.includes('<') && message.includes('>')) {
+        messageElement.innerHTML = message;
+    } else {
+        messageElement.textContent = message;
+    }
     confirmButton.textContent = confirmText;
     cancelButton.textContent = cancelText;
     
@@ -266,17 +272,17 @@ window.showCustomConfirm = function(options = {}) {
     // Set icon
     if (isDeleteOperation) {
         // Force custom SVG for all delete operations
-        iconElement.className = `w-36 h-36 mb-4 flex items-center justify-center`;
-        iconElement.innerHTML = `<img src="../assets/icons/trash.svg" alt="Delete Icon" class="custom-svg-red w-36 h-36">`;
+        iconElement.className = `${iconSize} mb-4 flex items-center justify-center`;
+        iconElement.innerHTML = `<img src="../assets/icons/trash.svg" alt="Delete Icon" class="custom-svg-red ${iconSize}">`;
     } else if (icon.startsWith('custom-')) {
         // Use other custom SVG files
         const svgFileName = icon.replace('custom-', '') + '.svg';
-        iconElement.className = `w-36 h-36 mb-4 flex items-center justify-center`;
-        iconElement.innerHTML = `<img src="../assets/icons/${svgFileName}" alt="Icon" class="w-36 h-36">`;
+        iconElement.className = `${iconSize} mb-4 flex items-center justify-center`;
+        iconElement.innerHTML = `<img src="../assets/icons/${svgFileName}" alt="Icon" class="${iconSize}">`;
     } else {
         // Use Lucide icon
-        iconElement.className = `w-36 h-36 mb-4 ${iconColor} flex items-center justify-center`;
-        iconElement.innerHTML = `<i data-lucide="${icon}" class="w-36 h-36"></i>`;
+        iconElement.className = `${iconSize} mb-4 ${iconColor} flex items-center justify-center`;
+        iconElement.innerHTML = `<i data-lucide="${icon}" class="${iconSize}"></i>`;
     }
     
     // Set confirm button style

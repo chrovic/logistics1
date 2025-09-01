@@ -30,7 +30,30 @@ function createBid($po_id, $supplier_id, $bid_amount, $notes) {
     $stmt = $conn->prepare("INSERT INTO bids (po_id, supplier_id, bid_amount, notes) VALUES (?, ?, ?, ?)");
     $stmt->bind_param("iids", $po_id, $supplier_id, $bid_amount, $notes);
     $success = $stmt->execute();
+    $bid_id = $conn->insert_id;
     $stmt->close();
+    
+    if ($success) {
+        // Get supplier and PO details for notification
+        $details_stmt = $conn->prepare("
+            SELECT s.supplier_name, po.item_name 
+            FROM suppliers s, purchase_orders po 
+            WHERE s.id = ? AND po.id = ?
+        ");
+        $details_stmt->bind_param("ii", $supplier_id, $po_id);
+        $details_stmt->execute();
+        $details_result = $details_stmt->get_result();
+        $details = $details_result->fetch_assoc();
+        $details_stmt->close();
+        
+        if ($details) {
+            // Create notification for admin and procurement users about new bid
+            require_once __DIR__ . '/notifications.php';
+            $notification_message = "New bid submitted: {$details['supplier_name']} bid ₱" . number_format($bid_amount, 2) . " for '{$details['item_name']}' (PO #{$po_id})";
+            createAdminNotification($notification_message, 'info', $bid_id, 'bid');
+        }
+    }
+    
     $conn->close();
     return $success;
 }

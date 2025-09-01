@@ -2,7 +2,32 @@
 require_once '../includes/functions/auth.php';
 require_once '../includes/functions/project.php';
 require_once '../includes/functions/supplier.php'; // Needed for the resource list
+require_once '../includes/functions/notifications.php'; // For admin notifications
 requireLogin();
+
+// Handle AJAX request to mark admin notifications as read
+if (isset($_GET['mark_admin_notifications_as_read']) && $_GET['mark_admin_notifications_as_read'] === 'true') {
+    header('Content-Type: application/json');
+    $user_id = getUserIdByUsername($_SESSION['username']);
+    if ($user_id && markAllAdminNotificationsAsRead($user_id)) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false]);
+    }
+    exit();
+}
+
+// Handle AJAX request to clear admin notifications
+if (isset($_GET['clear_admin_notifications']) && $_GET['clear_admin_notifications'] === 'true') {
+    header('Content-Type: application/json');
+    $user_id = getUserIdByUsername($_SESSION['username']);
+    if ($user_id && canReceiveAdminNotifications($_SESSION['role'] ?? '') && clearAllAdminNotifications($user_id)) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false]);
+    }
+    exit();
+}
 
 // Role check
 if ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'plt') {

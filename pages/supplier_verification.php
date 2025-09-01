@@ -54,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="icon" href="../assets/images/slate2.png" type="image/png">
     <link rel="stylesheet" href="../assets/css/login.css">
     <script src="../assets/js/custom-alerts.js"></script>
+    <script src="../assets/js/script.js"></script>
 </head>
 <body>
     <div class="main-container">

@@ -82,7 +82,7 @@ body {
     transition: all 0.2s ease;
 }
 
-.notification-container:hover {
+.notification-container:hover:not(:has(.notification-panel:hover)) {
     background-color: #f8fafc;
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -136,11 +136,118 @@ body {
     font-weight: 600;
     color: #374151;
     border-bottom: 1px solid var(--sp-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
+.notification-clear-btn {
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+    position: relative;
+    z-index: 20;
+    pointer-events: auto;
+}
+
+.notification-clear-btn:hover {
+    color: #10b981;
+    background-color: rgba(16, 185, 129, 0.1);
+}
+
+.notification-clear-btn:active {
+    transform: scale(0.98);
+}
+
+/* Modal styles for custom confirmation - Light theme only */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 200;
+    backdrop-filter: blur(3px);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-width: 420px;
+    width: 100%;
+    position: relative;
+    border: 1px solid #e5e7eb;
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+/* Custom confirmation modal specific styling */
+#customConfirmModal .modal-content {
+    padding: 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#customConfirmModal #confirmModalIcon {
+    width: 4rem;
+    height: 4rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+}
+
+#customConfirmModal #confirmModalIcon i {
+    width: 4rem;
+    height: 4rem;
+}
+
+#customConfirmModal #confirmModalTitle {
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+#customConfirmModal #confirmModalMessage {
+    color: var(--text-color);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0 0 2rem 0;
+}
+
+#customConfirmModal .form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    width: 100%;
+    margin-top: 2rem;
+}
+
+
+
 .notification-list {
-    max-height: 24rem;
+    max-height: 15rem;
     overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
 .no-notifications {

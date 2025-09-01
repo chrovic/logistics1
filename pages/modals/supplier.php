@@ -205,3 +205,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<!-- Custom Confirmation Modal -->
+<div id="customConfirmModal" class="modal">
+    <div class="modal-content">
+        <div id="confirmModalIcon" style="width: 8rem; height: 8rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="message-square-warning w-24 h-24 text-[--text-color]"></i>
+        </div>
+        <h2 id="confirmModalTitle" style="font-size: 1.25rem; font-weight: 600; color: #1e293b; margin-bottom: 1rem;">Confirm Action</h2>
+        <p id="confirmModalMessage" style="font-size: 1rem; line-height: 1.5; margin-bottom: 1rem;">Are you sure you want to continue?</p>
+        <div style="display: flex; gap: 16px; justify-content: center; margin-top: 8px;">
+            <button type="button" id="confirmModalCancel" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Cancel</button>
+            <button type="button" id="confirmModalConfirm" style="background: #dc2626; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);">Clear All</button>
+        </div>
+    </div>
+</div>

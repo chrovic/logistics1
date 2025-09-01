@@ -23,7 +23,12 @@ $notification_count = getUnreadNotificationCountBySupplier($supplier_id_for_noti
         </span>
       <?php endif; ?>
       <div id="notification-panel" class="notification-panel">
-          <div class="notification-header">Notifications</div>
+          <div class="notification-header">
+              <span>Notifications</span>
+              <?php if (!empty($all_notifications)): ?>
+              <button class="notification-clear-btn" id="supplier-clear-notifications-btn" data-action="clear">Clear All</button>
+              <?php endif; ?>
+          </div>
           <ul class="notification-list">
               <?php if (empty($all_notifications)): ?>
                   <li class="no-notifications">You have no notifications.</li>

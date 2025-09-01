@@ -1,5 +1,33 @@
 <?php
-// Enhanced FOUC prevention with CSS load detection  
+// Enhanced FOUC prevention with CSS load detection
+require_once __DIR__ . '/../includes/functions/notifications.php';
+
+// Get notification data for admin and procurement users
+$current_user_id = null;
+$admin_notifications = [];
+$admin_notification_count = 0;
+$show_notification_icon = false;
+
+// Show notification icon for all roles except supplier
+if (isset($_SESSION['role']) && $_SESSION['role'] !== 'supplier') {
+    $show_notification_icon = true;
+    
+    // Only load actual notification data for admin and procurement users
+    if (canReceiveAdminNotifications($_SESSION['role'] ?? '')) {
+        try {
+            $current_user_id = getUserIdByUsername($_SESSION['username']);
+            if ($current_user_id) {
+                $admin_notifications = getAdminNotifications($current_user_id);
+                $admin_notification_count = getUnreadAdminNotificationCount($current_user_id);
+            }
+        } catch (Exception $e) {
+            // Silently fail if database tables don't exist yet
+            error_log("Admin notifications error: " . $e->getMessage());
+            $admin_notifications = [];
+            $admin_notification_count = 0;
+        }
+    }
+}
 ?>
 <script>
 (function() {
@@ -43,6 +71,50 @@
     <h1><?php echo ($_SESSION['role'] === 'admin') ? 'Admin Panel' : 'Staff Panel'; ?> <span class="system-title">| LOGISTICS 1</span></h1>
   </div>
     <div class="theme-toggle-container">
+        <!-- Notification Icon for All Non-Supplier Users -->
+        <?php if ($show_notification_icon): ?>
+        <div class="notification-container" id="admin-notification-button">
+            <i data-lucide="bell" class="notification-bell"></i>
+            <?php if ($admin_notification_count > 0): ?>
+            <span class="notification-count">
+                <?php echo $admin_notification_count; ?>
+            </span>
+            <?php endif; ?>
+            <div id="admin-notification-panel" class="notification-panel">
+                <div class="notification-header">
+                    <span>Notifications</span>
+                    <?php if (canReceiveAdminNotifications($_SESSION['role'] ?? '') && !empty($admin_notifications)): ?>
+                    <button class="notification-clear-btn" id="clear-notifications-btn" data-action="clear">Clear All</button>
+                    <?php endif; ?>
+                </div>
+                <ul class="notification-list">
+                    <?php if (canReceiveAdminNotifications($_SESSION['role'] ?? '')): ?>
+                        <?php if (empty($admin_notifications)): ?>
+                            <li class="no-notifications">You have no notifications.</li>
+                        <?php else: ?>
+                            <?php foreach ($admin_notifications as $notif): ?>
+                                <li class="notification-item <?php echo $notif['is_read'] ? '' : 'unread'; ?>" data-read="<?php echo $notif['is_read']; ?>">
+                                    <div class="notification-content">
+                                        <?php if (!$notif['is_read']): ?>
+                                          <span class="unread-dot"></span>
+                                        <?php endif; ?>
+                                        <div class="notification-text">
+                                          <p class="notification-message"><?php echo htmlspecialchars($notif['message']); ?></p>
+                                          <p class="notification-time"><?php echo date("F j, Y, g:i a", strtotime($notif['created_at'])); ?></p>
+                                        </div>
+                                    </div>
+                                </li>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <!-- Non-functional notification panel for other roles -->
+                        <li class="no-notifications">Notification functionality coming soon for your role.</li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+        </div>
+        <?php endif; ?>
+        
         <div class="admin-profile-dropdown">
             <div class="admin-profile flex items-center bg-[var(--card-bg)] rounded-full shadow-[inset_0_0_0_2px_var(--border-color)] p-2 pr-2" id="adminProfileToggle">
                 <span class="admin-name ml-2 mr-1 text-[var(--text-color)]"><?php echo ($_SESSION['role'] === 'admin') ? 'Administrator' : ucfirst($_SESSION['username'] ?? 'User'); ?></span>
@@ -70,7 +142,7 @@
       <i data-lucide="user-round-minus" class="w-24 h-24 mb-4"></i>
       <h2 class="modal-title mb-4">Confirm Logout</h2>
       <p class="mb-6 text-[var(--text-color)]">Are you sure you want to log out? You will need to login again to continue.</p>
-      <div class="form-actions flex justify-center pt-4 border-gray-200 dark:border-gray-700">
+      <div class="form-actions flex justify-center pt-4 space-x-2 border-gray-200 dark:border-gray-700">
         <button type="button" class="btn bg-[var(--cancel-btn-bg)] hover:bg-gray-400 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" onclick="window.closeModal(document.getElementById('logoutConfirmModal'))">No, cancel</button>
         <button id="confirmLogoutBtn" class="btn btn-danger bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Yes, logout</button>
       </div>
@@ -79,12 +151,12 @@
 
 <div id="customConfirmModal" class="modal hidden fixed inset-0 flex items-center justify-center">
     <div class="modal-content bg-[var(--card-bg)] p-10 rounded-3xl shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto relative flex flex-col items-center justify-center text-center">
-        <div id="confirmModalIcon" class="w-28 h-28 mb-4 text-yellow-500 flex items-center justify-center">
-            <i data-lucide="alert-triangle" class="w-28 h-28"></i>
+        <div id="confirmModalIcon" class="w-24 h-24 mb-4 flex items-center justify-center">
+            <i data-lucide="message-square-warning" class="w-24 h-24"></i>
         </div>
         <h2 id="confirmModalTitle" class="modal-title mb-4">Confirm Action</h2>
         <p id="confirmModalMessage" class="mb-6 text-[var(--text-color)]">Are you sure you want to continue?</p>
-        <div class="form-actions flex justify-center pt-4 border-gray-200 dark:border-gray-700">
+        <div class="form-actions flex justify-center pt-4 space-x-2 border-gray-200 dark:border-gray-700">
             <button type="button" id="confirmModalCancel" class="btn bg-[var(--cancel-btn-bg)] hover:bg-gray-400 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Cancel</button>
             <button type="button" id="confirmModalConfirm" class="btn btn-danger bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Confirm</button>
         </div>
@@ -95,3 +167,4 @@
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <script src="../assets/js/custom-dropdown.js"></script>
 <script src="../assets/js/custom-datepicker.js"></script>
+<script src="../assets/js/admin-notifications.js"></script>

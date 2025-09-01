@@ -4,6 +4,30 @@ require_once '../includes/functions/bids.php';
 require_once '../includes/functions/notifications.php';
 requireLogin();
 
+// Handle AJAX request to mark notifications as read
+if (isset($_GET['mark_notifications_as_read']) && $_GET['mark_notifications_as_read'] === 'true') {
+    header('Content-Type: application/json');
+    $supplier_id = getSupplierIdFromUsername($_SESSION['username']);
+    if (markAllNotificationsAsRead($supplier_id)) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false]);
+    }
+    exit();
+}
+
+// Handle AJAX request to clear all notifications
+if (isset($_GET['clear_supplier_notifications']) && $_GET['clear_supplier_notifications'] === 'true') {
+    header('Content-Type: application/json');
+    $supplier_id = getSupplierIdFromUsername($_SESSION['username']);
+    if (clearAllSupplierNotifications($supplier_id)) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false]);
+    }
+    exit();
+}
+
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     logout();
 }
@@ -104,6 +128,7 @@ $currentPage = basename($_SERVER['SCRIPT_NAME']);
     <?php include 'modals/supplier.php'; ?>
     
     <script src="../assets/js/custom-alerts.js"></script>
+    <script src="../assets/js/script.js"></script>
     <script src="../assets/js/supplier_portal.js"></script>
 </body>
 </html>

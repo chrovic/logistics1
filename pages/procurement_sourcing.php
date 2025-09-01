@@ -4,11 +4,36 @@ require_once '../includes/functions/supplier.php';
 require_once '../includes/functions/purchase_order.php';
 require_once '../includes/functions/inventory.php'; // For item list in modal
 require_once '../includes/functions/bids.php';     // For handling bids
+require_once '../includes/functions/notifications.php'; // For admin notifications
 requireLogin();
 
 // Role check for admin/procurement
 if ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'procurement') {
     header("Location: dashboard.php");
+    exit();
+}
+
+// Handle AJAX request to mark admin notifications as read
+if (isset($_GET['mark_admin_notifications_as_read']) && $_GET['mark_admin_notifications_as_read'] === 'true') {
+    header('Content-Type: application/json');
+    $user_id = getUserIdByUsername($_SESSION['username']);
+    if ($user_id && markAllAdminNotificationsAsRead($user_id)) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false]);
+    }
+    exit();
+}
+
+// Handle AJAX request to clear admin notifications
+if (isset($_GET['clear_admin_notifications']) && $_GET['clear_admin_notifications'] === 'true') {
+    header('Content-Type: application/json');
+    $user_id = getUserIdByUsername($_SESSION['username']);
+    if ($user_id && canReceiveAdminNotifications($_SESSION['role'] ?? '') && clearAllAdminNotifications($user_id)) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false]);
+    }
     exit();
 }
 
