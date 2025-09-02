@@ -262,9 +262,21 @@ function getAutomaticForecasts(array $inventoryItems): array
         
         if ($result->num_rows > 0) {
             $cachedData = $result->fetch_assoc();
+            
+            // Apply styling to cached data
+            $styled_analysis = $cachedData['analysis']; // Keep analysis unstyled
+            $styled_action = $cachedData['action'];
+            if (stripos($cachedData['action'], 'Reorder') !== false) {
+                $styled_action = "<strong class='text-amber-500'>{$cachedData['action']}</strong>";
+            } elseif (stripos($cachedData['action'], 'Monitor') !== false) {
+                $styled_action = "<strong class='text-blue-500'>{$cachedData['action']}</strong>";
+            } elseif (stripos($cachedData['action'], 'Expedite') !== false) {
+                $styled_action = "<strong class='text-red-500'>{$cachedData['action']}</strong>";
+            }
+            
             $finalForecasts[$item['id']] = [
-                'analysis' => $cachedData['analysis'],
-                'action' => $cachedData['action']
+                'analysis' => $styled_analysis,
+                'action' => $styled_action
             ];
         } else {
             $itemsToFetchFromApi[] = $item;
@@ -278,12 +290,11 @@ function getAutomaticForecasts(array $inventoryItems): array
         
         // 3. Update the cache and merge the new results
         foreach ($apiForecasts as $itemId => $forecastData) {
-            $finalForecasts[$itemId] = $forecastData;
-            
-            // Use raw values for database insertion to avoid saving HTML spans
+            // Store raw text in cache, apply styling when displaying
             $raw_analysis = strip_tags($forecastData['analysis']);
             $raw_action = strip_tags($forecastData['action']);
 
+            // Save raw values to database
             $stmt = $conn->prepare(
                 "INSERT INTO inventory_forecast_cache (item_id, analysis, action, cached_at) 
                  VALUES (?, ?, ?, NOW()) 
@@ -292,6 +303,22 @@ function getAutomaticForecasts(array $inventoryItems): array
             $stmt->bind_param("iss", $itemId, $raw_analysis, $raw_action);
             $stmt->execute();
             $stmt->close();
+            
+            // Apply styling for final display
+            $styled_analysis = $raw_analysis; // Keep analysis unstyled
+            $styled_action = $raw_action;
+            if (stripos($raw_action, 'Reorder') !== false) {
+                $styled_action = "<strong class='text-amber-500'>{$raw_action}</strong>";
+            } elseif (stripos($raw_action, 'Monitor') !== false) {
+                $styled_action = "<strong class='text-blue-500'>{$raw_action}</strong>";
+            } elseif (stripos($raw_action, 'Expedite') !== false) {
+                $styled_action = "<strong class='text-red-500'>{$raw_action}</strong>";
+            }
+            
+            $finalForecasts[$itemId] = [
+                'analysis' => $styled_analysis,
+                'action' => $styled_action
+            ];
         }
     }
     
@@ -356,6 +383,8 @@ function fetchForecastsFromGeminiApi(array $inventoryItems): array
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
     curl_setopt($ch, CURLOPT_TIMEOUT, 45);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -372,12 +401,18 @@ function fetchForecastsFromGeminiApi(array $inventoryItems): array
             $analysis_text = htmlspecialchars($analysis_data['analysis'] ?? 'No analysis available.');
             $action_text = htmlspecialchars($analysis_data['action'] ?? 'N/A');
 
+            // Keep analysis as plain text (no styling)
             $analysis_html = $analysis_text;
-            if (stripos($analysis_text, 'declin') !== false) $analysis_html = "<span class='text-amber-500'>{$analysis_text}</span>";
-            if (stripos($analysis_text, 'increas') !== false) $analysis_html = "<span class='text-emerald-500'>{$analysis_text}</span>";
             
+            // Apply styling to action but don't save the HTML to database
             $action_html = $action_text;
-            if (stripos($action_text, 'Reorder') !== false) $action_html = "<strong class='text-amber-500'>{$action_text}</strong>";
+            if (stripos($action_text, 'Reorder') !== false) {
+                $action_html = "<strong class='text-amber-500'>{$action_text}</strong>";
+            } elseif (stripos($action_text, 'Monitor') !== false) {
+                $action_html = "<strong class='text-blue-500'>{$action_text}</strong>";
+            } elseif (stripos($action_text, 'Expedite') !== false) {
+                $action_html = "<strong class='text-red-500'>{$action_text}</strong>";
+            }
 
             $apiForecasts[$itemId] = ['analysis' => $analysis_html, 'action' => $action_html];
         }
@@ -631,6 +666,8 @@ function getAutomaticPriceForecasts(array $inventoryItems): array
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
             curl_setopt($ch, CURLOPT_TIMEOUT, 45);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
             $response = curl_exec($ch);
             $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);

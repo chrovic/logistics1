@@ -443,6 +443,20 @@ input:-webkit-autofill:active {
     background-color: var(--dropdown-item-hover);
 }
 
+/* Clickable notification styles */
+.notification-item.clickable-notification:hover {
+    background-color: rgba(59, 130, 246, 0.08);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.notification-item.clickable-notification {
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+
+
 .notification-item.unread {
     background-color: rgba(59, 130, 246, 0.05);
 }

@@ -1,4 +1,33 @@
 // Supplier Portal Notifications
+function attachSupplierClickHandlers() {
+    const notificationPanel = document.getElementById('notification-panel');
+    if (!notificationPanel) return;
+    
+    const clickableNotifications = notificationPanel.querySelectorAll('.clickable-notification[data-click-action]');
+    clickableNotifications.forEach(notification => {
+        if (!notification.dataset.clickListenerAttached) {
+            notification.dataset.clickListenerAttached = 'true';
+            notification.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                const action = this.dataset.clickAction;
+                if (action === 'open-bids') {
+                    window.location.href = '../pages/supplier_bidding.php'; // Open Bids tab
+                } else if (action === 'bid-history') {
+                    window.location.href = '../pages/supplier_bid_history.php'; // Bid History tab
+                }
+                
+                // Close the notification panel
+                notificationPanel.style.display = 'none';
+            });
+            
+            // Add hover effect
+            notification.style.cursor = 'pointer';
+        }
+    });
+}
+
 function clearAllSupplierNotifications() {
     const notificationButton = document.getElementById('notification-button');
     const notificationPanel = document.getElementById('notification-panel');
@@ -82,6 +111,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 }
                                 item.setAttribute('data-read', '1');
                             });
+                            
+                            // Reinitialize click handlers for any new notifications
+                            attachSupplierClickHandlers();
                         }
                     })
                     .catch(error => console.error('Error marking notifications as read:', error));
@@ -118,5 +150,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+        
+        // Initialize click handlers for notifications
+        attachSupplierClickHandlers();
     }
 });

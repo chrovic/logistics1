@@ -41,8 +41,16 @@ if (isset($_GET['po_id'])) {
     $bids = getBidsForPO($po_id);
 
     if (empty($bids)) {
+        $analysis = 'No suppliers have bid on this item yet.';
+        
+        // Cache this result as well
+        $stmt_cache = $conn->prepare("INSERT INTO procurement_analysis_cache (po_id, analysis_text, cached_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE analysis_text = VALUES(analysis_text), cached_at = NOW()");
+        $stmt_cache->bind_param("is", $po_id, $analysis);
+        $stmt_cache->execute();
+        $stmt_cache->close();
+        
         $conn->close();
-        echo json_encode(['success' => false, 'error' => 'No suppliers have bid on this item yet.']);
+        echo json_encode(['success' => true, 'analysis' => $analysis]);
         exit();
     }
 
@@ -76,6 +84,8 @@ if (isset($_GET['po_id'])) {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
     curl_setopt($ch, CURLOPT_TIMEOUT, 45);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);

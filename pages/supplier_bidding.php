@@ -70,7 +70,8 @@ if (isset($_SESSION['message'])) {
 }
 
 // Fetch Data for the Page
-$open_purchase_orders = getOpenForBiddingPOs();
+$open_purchase_orders = getOpenForBiddingPOs(); // All open opportunities for the table
+$fresh_purchase_orders = getOpenForBiddingPOsWithoutBids(); // Fresh opportunities for alert
 $currentPage = basename($_SERVER['SCRIPT_NAME']);
 ?>
 <!DOCTYPE html>
@@ -159,36 +160,57 @@ $currentPage = basename($_SERVER['SCRIPT_NAME']);
     <script src="../assets/js/custom-alerts.js"></script>
     <script src="../assets/js/script.js"></script>
     
-    <?php if ($message && !empty(trim($message))): ?>
+    <?php 
+    // Clear any session messages on this page since we now use the new Information alert system
+    if (isset($_SESSION['message'])) {
+        unset($_SESSION['message'], $_SESSION['message_type']);
+    }
+    ?>
+    
+    <script src="../assets/js/supplier_portal.js"></script>
+    
+        <?php if (!empty($fresh_purchase_orders)): ?>
     <script>
-        // Wait for both DOM and custom alerts to be ready
-        function tryShowCustomAlert() {
-            if (document.body && window.customAlert && typeof window.customAlert.show === 'function') {
-                window.customAlert.show(
-                    <?php echo json_encode($message); ?>, 
-                    <?php echo json_encode($message_type); ?>, 
-                    5000
-                );
-            } else if (document.body && window.showCustomAlert && typeof window.showCustomAlert === 'function') {
+        // Show Information alert about fresh bidding opportunities (no bids yet)
+        function showBiddingOpportunitiesAlert() {
+            if (window.showCustomAlert && typeof window.showCustomAlert === 'function') {
+                <?php
+                    // Get the first few fresh items for the alert
+                    $alert_items = array_slice($fresh_purchase_orders, 0, 3);
+                    $alert_messages = [];
+                    foreach ($alert_items as $po) {
+                        $alert_messages[] = "• " . htmlspecialchars($po['item_name']) . " (Qty: " . $po['quantity'] . ")";
+                    }
+                    $items_text = implode("\n", $alert_messages);
+                    
+                    if (count($fresh_purchase_orders) > 3) {
+                        $items_text .= "\n• And " . (count($fresh_purchase_orders) - 3) . " more fresh opportunities...";
+                    }
+                    
+                    $alert_message = "Fresh bidding opportunities (no bids yet):\n\n" . $items_text;
+                ?>
+                
                 window.showCustomAlert(
-                    <?php echo json_encode($message); ?>, 
-                    <?php echo json_encode($message_type); ?>
+                    <?php echo json_encode($alert_message); ?>,
+                    'info',
+                    8000,
+                    'Fresh Bidding Opportunities'
                 );
             } else {
                 // Retry after a short delay if not ready
-                setTimeout(tryShowCustomAlert, 50);
+                setTimeout(showBiddingOpportunitiesAlert, 100);
             }
         }
 
-        // Start when DOM is ready
+        // Show alert after page loads (with a small delay to ensure everything is ready)
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', tryShowCustomAlert);
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(showBiddingOpportunitiesAlert, 500);
+            });
         } else {
-            tryShowCustomAlert();
+            setTimeout(showBiddingOpportunitiesAlert, 500);
         }
     </script>
     <?php endif; ?>
-    
-    <script src="../assets/js/supplier_portal.js"></script>
 </body>
 </html>

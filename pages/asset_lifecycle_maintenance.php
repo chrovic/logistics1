@@ -253,14 +253,7 @@ $usageLogsByAsset = getAllUsageLogsGroupedByAsset();
                     </span>
                   </td>
                   <td>
-                    <?php 
-                      $risk = $forecasts[$asset['id']]['risk'] ?? 'No Data';
-                      $risk_class = 'text-gray-400';
-                      if ($risk === 'High') $risk_class = 'text-red-500 font-bold';
-                      if ($risk === 'Medium') $risk_class = 'text-yellow-500 font-bold';
-                      if ($risk === 'Low') $risk_class = 'text-green-500 font-bold';
-                    ?>
-                    <span class="<?php echo $risk_class; ?>"><?php echo $risk; ?></span>
+                    <?php echo $forecasts[$asset['id']]['risk'] ?? '<span class="text-gray-400">No Data</span>'; ?>
                   </td>
                   <td><?php echo $forecasts[$asset['id']]['next_maintenance'] ?? 'N/A'; ?></td>
                   <?php if ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'alms'): ?>

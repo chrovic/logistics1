@@ -15,6 +15,22 @@ function getOpenForBiddingPOs() {
 }
 
 /**
+ * Retrieves purchase orders that are 'Open for Bidding' and have no bids yet (fresh opportunities).
+ * @return array An array of purchase order records without any bids.
+ */
+function getOpenForBiddingPOsWithoutBids() {
+    $conn = getDbConnection();
+    $sql = "SELECT po.* FROM purchase_orders po 
+            LEFT JOIN bids b ON po.id = b.po_id 
+            WHERE po.status = 'Open for Bidding' AND b.id IS NULL 
+            ORDER BY po.order_date DESC";
+    $result = $conn->query($sql);
+    $pos = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    $conn->close();
+    return $pos;
+}
+
+/**
  * Creates a new bid from a supplier for a specific purchase order.
  * @param int $po_id
  * @param int $supplier_id

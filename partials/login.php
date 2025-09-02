@@ -18,6 +18,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 $error_message = '';
 $remembered_user = $_COOKIE['remember_user'] ?? '';
 
+// Check for session expired message
+if (isset($_GET['session_expired']) && $_GET['session_expired'] === 'true') {
+    $error_message = 'Your session has expired. Please log in again.';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username    = $_POST['username'] ?? '';
     $password    = $_POST['password'] ?? '';

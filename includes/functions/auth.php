@@ -13,7 +13,7 @@ $timeout_duration = 1800; // 30 minutes
 if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $timeout_duration)) {
     session_unset();
     session_destroy();
-    header("Location: ../../partials/login.php?session_expired=true");
+    header("Location: /logistics1/partials/login.php?session_expired=true");
     exit();
 }
 $_SESSION['last_activity'] = time();
@@ -91,14 +91,14 @@ function hasRole($role) {
 // --- Page Security Functions ---
 function requireLogin() {
     if (!isLoggedIn()) {
-        header("Location: ../partials/login.php");
+        header("Location: /logistics1/partials/login.php");
         exit();
     }
 }
 
 function requireAdmin() {
     if (!hasRole('admin') && !hasRole('procurement')) {
-        header("Location: dashboard.php");
+        header("Location: /logistics1/pages/dashboard.php");
         exit();
     }
 }
@@ -106,6 +106,6 @@ function requireAdmin() {
 function logout() {
     session_unset();
     session_destroy();
-    header("Location: ../partials/login.php");
+    header("Location: /logistics1/partials/login.php");
     exit();
 }

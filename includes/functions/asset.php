@@ -283,7 +283,23 @@ function getPredictiveMaintenanceForecasts(array $assets): array {
         $stmt->execute();
         $result = $stmt->get_result();
         if ($result->num_rows > 0) {
-            $finalForecasts[$asset['id']] = $result->fetch_assoc();
+            $cachedData = $result->fetch_assoc();
+            $risk = $cachedData['risk'];
+            $next_maintenance = $cachedData['next_maintenance'];
+            
+            // Apply styling to cached risk data
+            $risk_html = $risk;
+            if ($risk === 'Low') {
+                $risk_html = '<span class="px-1 py-0.5 sm:px-2 sm:py-1 font-semibold leading-tight text-xs rounded-full whitespace-nowrap inline-flex items-center bg-gray-100 text-gray-700"><span class="inline-block w-1.5 h-1.5 bg-gray-500 rounded-full mr-1"></span>Low</span>';
+            } elseif ($risk === 'Medium') {
+                $risk_html = '<span class="px-1 py-0.5 sm:px-2 sm:py-1 font-semibold leading-tight text-xs rounded-full whitespace-nowrap inline-flex items-center bg-blue-100 text-blue-700"><span class="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full mr-1"></span>Medium</span>';
+            } elseif ($risk === 'High') {
+                $risk_html = '<span class="px-1 py-0.5 sm:px-2 sm:py-1 font-semibold leading-tight text-xs rounded-full whitespace-nowrap inline-flex items-center bg-red-100 text-red-700"><span class="inline-block w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>High</span>';
+            } elseif ($risk === 'No Data') {
+                $risk_html = '<span class="px-1 py-0.5 sm:px-2 sm:py-1 font-semibold leading-tight text-xs rounded-full whitespace-nowrap inline-flex items-center bg-gray-100 text-gray-500"><span class="inline-block w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>No Data</span>';
+            }
+            
+            $finalForecasts[$asset['id']] = ['risk' => $risk_html, 'next_maintenance' => $next_maintenance];
         } else {
             $assetsToFetchFromApi[] = $asset;
         }
@@ -308,8 +324,8 @@ function getPredictiveMaintenanceForecasts(array $assets): array {
 }
 
 function fetchForecastsFromGeminiForAssets(array $assets): array {
-    $apiKey = 'AIzaSyAmMMCjXOlS7tSXFmF9jiJOxa7OW3gsjO0';
-    $geminiApiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=' . $apiKey;
+    $apiKey = 'AIzaSyCdaU_w5RrRdOfsNnxHaM7dvMGrFA34J7o';
+    $geminiApiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' . $apiKey;
     $forecasts = [];
     $assetsWithHistory = [];
 
@@ -319,7 +335,8 @@ function fetchForecastsFromGeminiForAssets(array $assets): array {
         $history = getAssetHistory($asset['id']);
         $usage_logs = $allUsageLogs[$asset['id']]['logs'] ?? [];
         if (count($history) < 2 && count($usage_logs) < 2) {
-            $forecasts[$asset['id']] = ['risk' => 'No Data', 'next_maintenance' => 'N/A'];
+            $no_data_html = '<span class="px-1 py-0.5 sm:px-2 sm:py-1 font-semibold leading-tight text-xs rounded-full whitespace-nowrap inline-flex items-center bg-gray-100 text-gray-500"><span class="inline-block w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>No Data</span>';
+            $forecasts[$asset['id']] = ['risk' => $no_data_html, 'next_maintenance' => 'N/A'];
         } else {
             $assetsWithHistory[$asset['id']] = ['name' => $asset['asset_name'], 'type' => $asset['asset_type'], 'history' => $history, 'usage' => $usage_logs];
         }
@@ -353,6 +370,8 @@ function fetchForecastsFromGeminiForAssets(array $assets): array {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
     curl_setopt($ch, CURLOPT_TIMEOUT, 45);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curl_error = curl_error($ch);
@@ -366,14 +385,28 @@ function fetchForecastsFromGeminiForAssets(array $assets): array {
             foreach ($batch_analysis as $index => $analysis_data) {
                 if (isset(array_keys($assetsWithHistory)[$index])) {
                     $assetId = array_keys($assetsWithHistory)[$index];
-                    $forecasts[$assetId] = ['risk' => htmlspecialchars($analysis_data['risk'] ?? 'Error'), 'next_maintenance' => htmlspecialchars($analysis_data['next_maintenance'] ?? 'N/A')];
+                    $risk = htmlspecialchars($analysis_data['risk'] ?? 'Error');
+                    $next_maintenance = htmlspecialchars($analysis_data['next_maintenance'] ?? 'N/A');
+                    
+                    // Style the risk as a pill with dot like the Status column
+                    $risk_html = $risk;
+                    if ($risk === 'Low') {
+                        $risk_html = '<span class="px-1 py-0.5 sm:px-2 sm:py-1 font-semibold leading-tight text-xs rounded-full whitespace-nowrap inline-flex items-center bg-gray-100 text-gray-700"><span class="inline-block w-1.5 h-1.5 bg-gray-500 rounded-full mr-1"></span>Low</span>';
+                    } elseif ($risk === 'Medium') {
+                        $risk_html = '<span class="px-1 py-0.5 sm:px-2 sm:py-1 font-semibold leading-tight text-xs rounded-full whitespace-nowrap inline-flex items-center bg-blue-100 text-blue-700"><span class="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full mr-1"></span>Medium</span>';
+                    } elseif ($risk === 'High') {
+                        $risk_html = '<span class="px-1 py-0.5 sm:px-2 sm:py-1 font-semibold leading-tight text-xs rounded-full whitespace-nowrap inline-flex items-center bg-red-100 text-red-700"><span class="inline-block w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>High</span>';
+                    }
+                    
+                    $forecasts[$assetId] = ['risk' => $risk_html, 'next_maintenance' => $next_maintenance];
                 }
             }
         }
     } else {
         foreach ($assetsWithHistory as $id => $asset) {
             $error_detail = !empty($curl_error) ? $curl_error : "HTTP Code: {$http_code}";
-            $forecasts[$id] = ['risk' => "<span class='text-red-500' title='{$error_detail}'>API Error</span>", 'next_maintenance' => 'Error'];
+            $error_html = '<span class="px-1 py-0.5 sm:px-2 sm:py-1 font-semibold leading-tight text-xs rounded-full whitespace-nowrap inline-flex items-center bg-red-100 text-red-700" title="' . htmlspecialchars($error_detail) . '"><span class="inline-block w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>API Error</span>';
+            $forecasts[$id] = ['risk' => $error_html, 'next_maintenance' => 'Error'];
         }
     }
     return $forecasts;

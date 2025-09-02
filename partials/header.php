@@ -93,7 +93,16 @@ if (isset($_SESSION['role']) && $_SESSION['role'] !== 'supplier') {
                             <li class="no-notifications">You have no notifications.</li>
                         <?php else: ?>
                             <?php foreach ($admin_notifications as $notif): ?>
-                                <li class="notification-item <?php echo $notif['is_read'] ? '' : 'unread'; ?>" data-read="<?php echo $notif['is_read']; ?>">
+                                <?php
+                                    // Determine click action based on related_type
+                                    $click_action = '';
+                                    if ($notif['related_type'] === 'supplier') {
+                                        $click_action = 'data-click-action="supplier-verification"';
+                                    } elseif ($notif['related_type'] === 'bid') {
+                                        $click_action = 'data-click-action="procurement-sourcing"';
+                                    }
+                                ?>
+                                <li class="notification-item clickable-notification <?php echo $notif['is_read'] ? '' : 'unread'; ?>" data-read="<?php echo $notif['is_read']; ?>" <?php echo $click_action; ?>>
                                     <div class="notification-content">
                                         <?php if (!$notif['is_read']): ?>
                                           <span class="unread-dot"></span>

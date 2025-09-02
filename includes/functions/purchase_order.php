@@ -2,6 +2,7 @@
 // Logistic1/includes/functions/purchase_order.php
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/notifications.php'; // Include notifications for awarding bids
+require_once __DIR__ . '/supplier.php'; // Include supplier functions for notifications
 
 /**
  * Creates a new purchase order with a 'Pending' status.
@@ -23,6 +24,18 @@ function createPurchaseOrder($supplier_id, $item_name, $quantity) {
     $stmt = $conn->prepare("INSERT INTO purchase_orders (supplier_id, item_name, quantity, status) VALUES (?, ?, ?, ?)");
     $stmt->bind_param("isis", $supplier_id, $item_name, $quantity, $status);
     $success = $stmt->execute();
+    
+    // If created as 'Open for Bidding', notify all approved suppliers
+    if ($success && $status === 'Open for Bidding') {
+        $po_id = $conn->insert_id; // Get the newly created PO ID
+        $approved_suppliers = getApprovedSuppliers();
+        $message = "New bidding opportunity: '$item_name' (Quantity: $quantity) - PO #$po_id is now open for bidding.";
+        
+        foreach ($approved_suppliers as $supplier) {
+            createNotification($supplier['id'], $message);
+        }
+    }
+    
     $stmt->close();
     $conn->close();
     return $success;
@@ -51,18 +64,46 @@ function getRecentPurchaseOrders($limit = 50) {
 }
 
 /**
- * Updates a purchase order's status to 'Open for Bidding'.
+ * Updates a purchase order's status to 'Open for Bidding' and notifies all approved suppliers.
  * @param int $po_id The ID of the purchase order.
  * @return bool True on success, false on failure.
  */
 function openPOForBidding($po_id) {
     if (empty($po_id)) return false;
     $conn = getDbConnection();
+    
+    // First, get the purchase order details for the notification
+    $stmt = $conn->prepare("SELECT item_name, quantity FROM purchase_orders WHERE id = ?");
+    $stmt->bind_param("i", $po_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $po_details = $result->fetch_assoc();
+    $stmt->close();
+    
+    if (!$po_details) {
+        $conn->close();
+        return false;
+    }
+    
+    // Update the purchase order status
     $stmt = $conn->prepare("UPDATE purchase_orders SET status = 'Open for Bidding' WHERE id = ?");
     $stmt->bind_param("i", $po_id);
     $success = $stmt->execute();
     $stmt->close();
     $conn->close();
+    
+    if ($success) {
+        // Send notifications to all approved suppliers
+        $approved_suppliers = getApprovedSuppliers();
+        $item_name = $po_details['item_name'];
+        $quantity = $po_details['quantity'];
+        $message = "New bidding opportunity: '$item_name' (Quantity: $quantity) - PO #$po_id is now open for bidding.";
+        
+        foreach ($approved_suppliers as $supplier) {
+            createNotification($supplier['id'], $message);
+        }
+    }
+    
     return $success;
 }
 

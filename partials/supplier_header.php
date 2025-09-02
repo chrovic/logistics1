@@ -34,7 +34,17 @@ $notification_count = getUnreadNotificationCountBySupplier($supplier_id_for_noti
                   <li class="no-notifications">You have no notifications.</li>
               <?php else: ?>
                   <?php foreach ($all_notifications as $notif): ?>
-                      <li class="notification-item <?php echo $notif['is_read'] ? '' : 'unread'; ?>" data-read="<?php echo $notif['is_read']; ?>">
+                      <?php
+                          // Determine click action based on message content
+                          $click_action = '';
+                          $message = $notif['message'];
+                          if (strpos($message, 'New bidding opportunity') !== false || strpos($message, 'open for bidding') !== false) {
+                              $click_action = 'data-click-action="open-bids"';
+                          } elseif (strpos($message, 'Congratulations') !== false || strpos($message, 'awarded') !== false || strpos($message, 'not selected') !== false) {
+                              $click_action = 'data-click-action="bid-history"';
+                          }
+                      ?>
+                      <li class="notification-item clickable-notification <?php echo $notif['is_read'] ? '' : 'unread'; ?>" data-read="<?php echo $notif['is_read']; ?>" <?php echo $click_action; ?>>
                           <div class="notification-content">
                               <?php if (!$notif['is_read']): ?>
                                 <span class="unread-dot"></span>

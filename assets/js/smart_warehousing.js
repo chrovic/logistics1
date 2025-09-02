@@ -782,9 +782,12 @@ async function getPriceForecast(itemName) {
         return;
     }
 
-    // Set title and show loading state
-    title.textContent = `Price Forecast for "${itemName}"`;
-    container.innerHTML = '<div class="flex items-center justify-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i><p class="ml-3 text-gray-500">Generating AI forecast...</p></div>';
+    // Set title and show loading state with trending icon
+    title.innerHTML = `<i data-lucide="trending-up-down" class="w-7 h-7 mr-3 flex-shrink-0"></i><span class="truncate">Price Forecast for "${itemName}"</span>`;
+    container.innerHTML = '<div class="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-4 mb-4"><div class="flex items-center"><i class="fas fa-spinner fa-spin text-xl mr-3"></i><p>Analyzing price trends with AI...</p></div></div>';
+    
+    // Re-initialize lucide icons for the new icon
+    if (typeof lucide !== 'undefined') lucide.createIcons();
     
     if (window.openModal) {
         window.openModal(modal);
@@ -796,16 +799,13 @@ async function getPriceForecast(itemName) {
         const result = await response.json();
 
         if (result.success) {
-            // Format the response with clear sections
-            const formattedForecast = result.forecast
-                .replace(/Recommendation:/g, '<strong class="block mt-4 text-blue-600">Recommendation:</strong>');
-
-            container.innerHTML = `<div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">${formattedForecast.replace(/\n/g, '<br>')}</div>`;
+            // Format the response to match PSM AI Analysis styling
+            container.innerHTML = `<div class="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-4 mb-4"><p class="font-bold">AI Price Analysis:</p><p>${result.forecast.replace(/\n/g, '<br>')}</p></div>`;
         } else {
-            container.innerHTML = `<div class="text-red-500 text-center py-8"><p class="font-bold">Error:</p><p>${result.error}</p></div>`;
+            container.innerHTML = `<div class="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-4"><p class="font-bold">Error:</p><p>${result.error}</p></div>`;
         }
     } catch (error) {
-        container.innerHTML = '<div class="text-red-500 text-center py-8"><p class="font-bold">An error occurred while fetching the forecast.</p></div>';
+        container.innerHTML = '<div class="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-4"><p class="font-bold">An error occurred while fetching the forecast.</p></div>';
         console.error('Forecast error:', error);
     }
 }

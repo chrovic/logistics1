@@ -40,6 +40,9 @@ window.AdminNotifications = (function() {
             toggleNotificationPanel();
         });
         
+        // Initialize click handlers for notifications
+        attachClickHandlers();
+        
         // Attach clear button listener if it exists
         const clearButton = document.getElementById('clear-notifications-btn');
         if (clearButton && !clearButton.dataset.listenerAttached) {
@@ -99,6 +102,35 @@ window.AdminNotifications = (function() {
         }
     }
     
+    function attachClickHandlers() {
+        const notificationPanel = document.getElementById('admin-notification-panel');
+        if (!notificationPanel) return;
+        
+        const clickableNotifications = notificationPanel.querySelectorAll('.clickable-notification[data-click-action]');
+        clickableNotifications.forEach(notification => {
+            if (!notification.dataset.clickListenerAttached) {
+                notification.dataset.clickListenerAttached = 'true';
+                notification.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    const action = this.dataset.clickAction;
+                    if (action === 'supplier-verification') {
+                        window.location.href = '../pages/admin_verification.php';
+                    } else if (action === 'procurement-sourcing') {
+                        window.location.href = '../pages/procurement_sourcing.php';
+                    }
+                    
+                    // Close the notification panel
+                    notificationPanel.style.display = 'none';
+                });
+                
+                // Add hover effect
+                notification.style.cursor = 'pointer';
+            }
+        });
+    }
+    
     function markNotificationsAsRead() {
         const notificationButton = document.getElementById('admin-notification-button');
         const notificationPanel = document.getElementById('admin-notification-panel');
@@ -122,6 +154,9 @@ window.AdminNotifications = (function() {
                         }
                         item.setAttribute('data-read', '1');
                     });
+                    
+                    // Reinitialize click handlers for any new notifications
+                    attachClickHandlers();
                 }
             })
             .catch(error => console.error('Error marking admin notifications as read:', error));

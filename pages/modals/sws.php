@@ -116,3 +116,30 @@ function decrementQuantity(inputId) {
       </form>
   </div>
 </div>
+
+<!-- Price Forecast Modal -->
+<div id="priceForecastModal" class="modal hidden">
+    <div class="modal-content p-8 max-w-2xl">
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="modal-title flex items-center min-w-0 flex-1" id="forecastModalTitle">
+                <i data-lucide="trending-up-down" class="w-7 h-7 mr-3 flex-shrink-0"></i>
+                <span class="truncate">Price Forecast</span>
+            </h2>
+            <button type="button" class="close-button flex-shrink-0 ml-3" onclick="closeModal(this.closest('.modal'))">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <p class="modal-subtitle">AI-powered price analysis and forecast</p>
+        <div class="border-b border-[var(--card-border)] mb-5"></div>
+        
+        <div id="forecastResultContainer" class="min-h-[200px]">
+            <!-- Forecast results will be loaded here -->
+        </div>
+        
+        <div class="flex justify-end gap-3 pt-4 mt-6 border-t border-[var(--card-border)]">
+            <button type="button" class="px-5 py-2.5 rounded-md border border-gray-300 cursor-pointer font-semibold transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200" onclick="closeModal(this.closest('.modal'))">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
