@@ -41,20 +41,20 @@ function getAllSuppliersIncludingPending() {
     return $suppliers;
 }
 
-function createSupplier($name, $contact_person, $email, $phone, $address) {
+function createSupplier($company_name, $contact_person, $email, $phone, $address) {
     $conn = getDbConnection();
     $stmt = $conn->prepare("INSERT INTO suppliers (supplier_name, contact_person, email, phone, address, status) VALUES (?, ?, ?, ?, ?, 'Pending')");
-    $stmt->bind_param("sssss", $name, $contact_person, $email, $phone, $address);
+    $stmt->bind_param("sssss", $company_name, $contact_person, $email, $phone, $address);
     $result = $stmt->execute();
     $stmt->close();
     $conn->close();
     return $result;
 }
 
-function updateSupplier($id, $name, $contact_person, $email, $phone, $address) {
+function updateSupplier($id, $company_name, $contact_person, $email, $phone, $address) {
     $conn = getDbConnection();
     $stmt = $conn->prepare("UPDATE suppliers SET supplier_name = ?, contact_person = ?, email = ?, phone = ?, address = ? WHERE id = ?");
-    $stmt->bind_param("sssssi", $name, $contact_person, $email, $phone, $address, $id);
+    $stmt->bind_param("sssssi", $company_name, $contact_person, $email, $phone, $address, $id);
     $result = $stmt->execute();
     $stmt->close();
     $conn->close();
@@ -129,7 +129,7 @@ function registerSupplier($data, $file) {
         
         // Prepare supplier data
         $stmt = $conn->prepare("INSERT INTO suppliers (supplier_name, contact_person, email, phone, address, status) VALUES (?, ?, ?, ?, ?, 'Pending')");
-        $stmt->bind_param("sssss", $data['supplier_name'], $data['contact_person'], $data['email'], $data['phone'], $data['address']);
+        $stmt->bind_param("sssss", $data['company_name'], $data['contact_person'], $data['email'], $data['phone'], $data['address']);
         $stmt->execute();
         $supplier_id = $stmt->insert_id;
         $stmt->close();
@@ -170,7 +170,7 @@ function registerSupplier($data, $file) {
         
         // Create notification for admin and procurement users about new supplier registration
         require_once __DIR__ . '/notifications.php';
-        $notification_message = "New supplier registration: '{$data['supplier_name']}' by {$data['contact_person']} is pending verification.";
+        $notification_message = "New supplier registration: '{$data['company_name']}' by {$data['contact_person']} is pending verification.";
         createAdminNotification($notification_message, 'info', $supplier_id, 'supplier');
         
         $conn->commit();
@@ -411,7 +411,7 @@ function getSupplierDetails($supplier_id) {
 function updateSupplierProfile($supplier_id, $data) {
     $conn = getDbConnection();
     $stmt = $conn->prepare("UPDATE suppliers SET supplier_name = ?, contact_person = ?, email = ?, phone = ?, address = ? WHERE id = ?");
-    $stmt->bind_param("sssssi", $data['supplier_name'], $data['contact_person'], $data['email'], $data['phone'], $data['address'], $supplier_id);
+    $stmt->bind_param("sssssi", $data['company_name'], $data['contact_person'], $data['email'], $data['phone'], $data['address'], $supplier_id);
     $result = $stmt->execute();
     $stmt->close();
     $conn->close();

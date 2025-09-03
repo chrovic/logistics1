@@ -62,11 +62,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit();
 }
 
-// Check for flash messages
+// NO AWARD NOTIFICATIONS IN OPEN BIDS TAB - COMPLETELY BLOCKED
+$message = '';
+$message_type = '';
+
+// Clear any session messages about awards/rejections immediately 
 if (isset($_SESSION['message'])) {
-    $message = $_SESSION['message'];
-    $message_type = $_SESSION['message_type'];
-    unset($_SESSION['message'], $_SESSION['message_type']);
+    $session_message = $_SESSION['message'];
+    
+    // NUKE any award/rejection messages - they belong in Bid History only
+    if (preg_match('/congratulations|awarded|not selected|rejected/i', $session_message) && 
+        !preg_match('/bid.*submitted|failed.*submit/i', $session_message)) {
+        // Award notifications detected - redirect to Bid History where they belong
+        unset($_SESSION['message'], $_SESSION['message_type']);
+        // Don't show anything in Open Bids tab
+    } else {
+        // Allow bid submission confirmations (success and error)
+        if (preg_match('/bid.*submitted|failed.*submit|your bid has been submitted|failed to submit your bid/i', $session_message)) {
+            $message = $session_message;
+            $message_type = $_SESSION['message_type'];
+        }
+        unset($_SESSION['message'], $_SESSION['message_type']);
+    }
+}
+
+// NUCLEAR OPTION: Mark all award notifications as read when visiting Open Bids tab
+$supplier_id_for_cleanup = getSupplierIdFromUsername($_SESSION['username']);
+if ($supplier_id_for_cleanup) {
+    $conn = getDbConnection();
+    // Mark ALL award/rejection notifications as read BUT keep bid submission notifications
+    $stmt = $conn->prepare("UPDATE notifications SET is_read = 1 WHERE supplier_id = ? AND (message LIKE '%Congratulations%' OR message LIKE '%awarded%' OR message LIKE '%not selected%' OR message LIKE '%rejected%') AND message NOT LIKE '%bid%submitted%' AND message NOT LIKE '%failed%submit%'");
+    $stmt->bind_param("i", $supplier_id_for_cleanup);
+    $stmt->execute();
+    $stmt->close();
+    $conn->close();
 }
 
 // Fetch Data for the Page
@@ -117,13 +146,14 @@ $currentPage = basename($_SERVER['SCRIPT_NAME']);
                                     <th>Item Name</th>
                                     <th>Quantity</th>
                                     <th>Date Posted</th>
+                                    <th>Ends At</th>
                                     <th></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (empty($open_purchase_orders)): ?>
                                     <tr>
-                                        <td colspan="4" class="text-center py-10 text-gray-500">
+                                        <td colspan="5" class="text-center py-10 text-gray-500">
                                             <div class="flex flex-col items-center gap-3">
                                                 <i data-lucide="gavel" class="w-12 h-12 text-gray-300"></i>
                                                 <p>There are no purchase orders currently open for bidding.</p>
@@ -135,6 +165,15 @@ $currentPage = basename($_SERVER['SCRIPT_NAME']);
                                     <td class="font-semibold"><?php echo htmlspecialchars($po['item_name']); ?></td>
                                     <td><?php echo $po['quantity']; ?></td>
                                     <td class="text-gray-600"><?php echo date("F j, Y", strtotime($po['order_date'])); ?></td>
+                                    <td class="text-gray-600">
+                                        <?php 
+                                        if ($po['ends_at']): 
+                                            echo date("M j, Y g:i A", strtotime($po['ends_at'])); 
+                                        else: 
+                                            echo '<span class="text-gray-400">No deadline</span>';
+                                        endif; 
+                                        ?>
+                                    </td>
                                     <td class="text-right">
                                         <button onclick="openBidModal(<?php echo $po['id']; ?>, '<?php echo htmlspecialchars(addslashes($po['item_name'])); ?>')" class="btn-primary">
                                             <i data-lucide="gavel" class="w-4 h-4"></i>
@@ -154,18 +193,78 @@ $currentPage = basename($_SERVER['SCRIPT_NAME']);
     <script>
         // Initialize Lucide icons
         lucide.createIcons();
+        
+        // COMPLETE NUCLEAR OVERRIDE - Block ALL award notifications in Open Bids tab
+        document.addEventListener('DOMContentLoaded', function() {
+            // Override showCustomAlert to completely block award notifications
+            const originalShowCustomAlert = window.showCustomAlert;
+            if (originalShowCustomAlert) {
+                window.showCustomAlert = function(message, type, duration, title) {
+                    // NUKE any award-related alerts in Open Bids tab BUT allow bid submission messages
+                    if (message && typeof message === 'string') {
+                        const isBidSubmission = /bid.*submitted|failed.*submit|your bid has been submitted|failed to submit your bid/i.test(message);
+                        const isAwardAlert = /congratulations|awarded|not selected|rejected|has been awarded|bid.*for.*awarded|po.*#.*awarded/i.test(message);
+                        
+                        // Block award alerts but allow bid submission alerts
+                        if (isAwardAlert && !isBidSubmission) {
+                            return; // COMPLETELY BLOCKED - NO AWARD NOTIFICATIONS IN OPEN BIDS
+                        }
+                    }
+                    // Allow fresh bidding opportunities and bid submission alerts
+                    return originalShowCustomAlert.call(this, message, type, duration, title);
+                };
+            }
+            
+            // Also override any other potential alert functions
+            if (window.alert) {
+                const originalAlert = window.alert;
+                window.alert = function(message) {
+                    if (message && typeof message === 'string') {
+                        const isBidSubmission = /bid.*submitted|failed.*submit|your bid has been submitted|failed to submit your bid/i.test(message);
+                        const isAwardAlert = /congratulations|awarded|not selected|rejected|has been awarded/i.test(message);
+                        
+                        // Block award alerts but allow bid submission alerts
+                        if (isAwardAlert && !isBidSubmission) {
+                            return; // BLOCKED
+                        }
+                    }
+                    return originalAlert.call(this, message);
+                };
+            }
+        });
     </script>
     <?php include 'modals/supplier.php'; ?>
     
     <script src="../assets/js/custom-alerts.js"></script>
     <script src="../assets/js/script.js"></script>
     
-    <?php 
-    // Clear any session messages on this page since we now use the new Information alert system
-    if (isset($_SESSION['message'])) {
-        unset($_SESSION['message'], $_SESSION['message_type']);
-    }
-    ?>
+    <?php if (!empty($message)): ?>
+    <script>
+        // Show success/error alert for bid submission
+        function showBidResultAlert() {
+            if (window.showCustomAlert && typeof window.showCustomAlert === 'function') {
+                window.showCustomAlert(
+                    <?php echo json_encode($message); ?>,
+                    <?php echo json_encode($message_type); ?>,
+                    5000,
+                    <?php echo json_encode($message_type === 'success' ? 'Bid Submitted' : 'Bid Failed'); ?>
+                );
+            } else {
+                // Retry after a short delay if not ready
+                setTimeout(showBidResultAlert, 50);
+            }
+        }
+
+        // Show bid result alert immediately after page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(showBidResultAlert, 100);
+            });
+        } else {
+            setTimeout(showBidResultAlert, 100);
+        }
+    </script>
+    <?php endif; ?>
     
     <script src="../assets/js/supplier_portal.js"></script>
     
@@ -202,13 +301,13 @@ $currentPage = basename($_SERVER['SCRIPT_NAME']);
             }
         }
 
-        // Show alert after page loads (with a small delay to ensure everything is ready)
+        // Show alert after page loads (with delay to allow bid success alerts to show first)
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(showBiddingOpportunitiesAlert, 500);
+                setTimeout(showBiddingOpportunitiesAlert, 1200);
             });
         } else {
-            setTimeout(showBiddingOpportunitiesAlert, 500);
+            setTimeout(showBiddingOpportunitiesAlert, 1200);
         }
     </script>
     <?php endif; ?>

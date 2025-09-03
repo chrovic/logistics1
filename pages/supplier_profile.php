@@ -44,7 +44,7 @@ $message = '';
 $message_type = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = [
-        'supplier_name' => $_POST['supplier_name'],
+        'company_name' => $_POST['company_name'],
         'contact_person' => $_POST['contact_person'],
         'email' => $_POST['email'],
         'phone' => $_POST['phone'],
@@ -111,7 +111,7 @@ $currentPage = basename($_SERVER['SCRIPT_NAME']);
                                     <i data-lucide="building" class="w-4 h-4 inline mr-2"></i>
                                     Company Name
                                 </label>
-                                <input type="text" name="supplier_name" value="<?php echo htmlspecialchars($supplier_details['supplier_name']); ?>" class="form-input" required>
+                                <input type="text" name="company_name" value="<?php echo htmlspecialchars($supplier_details['supplier_name']); ?>" class="form-input" required>
                             </div>
                             <div>
                                 <label class="form-label">

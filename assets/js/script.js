@@ -101,6 +101,9 @@ function initGlobalUI() {
                 if (window.reinitializeCustomDatepickers) {
                     window.reinitializeCustomDatepickers();
                 }
+                if (window.reinitializeCustomDateTimePickers) {
+                    window.reinitializeCustomDateTimePickers();
+                }
             });
         }
     }

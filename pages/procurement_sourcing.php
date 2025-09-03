@@ -45,7 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'create_po') {
         $itemName = $_POST['item_name_po'] ?? '';
         $quantity = $_POST['quantity_po'] ?? 0;
-        if (createPurchaseOrder(null, $itemName, $quantity)) {
+        $ends_at = $_POST['ends_at_po'] ?? null;
+        if (createPurchaseOrder(null, $itemName, $quantity, $ends_at)) {
              $_SESSION['flash_message'] = "Purchase Order for <strong>" . htmlspecialchars($itemName) . "</strong> created and is pending approval.";
              $_SESSION['flash_message_type'] = 'success';
         } else {
@@ -86,14 +87,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // --- Admin-Only Actions for Supplier Management ---
     if ($_SESSION['role'] === 'admin') {
         if ($action === 'create_supplier' || $action === 'update_supplier') {
-            $name = $_POST['supplier_name'] ?? '';
+            $company_name = $_POST['company_name'] ?? '';
             $contact = $_POST['contact_person'] ?? '';
             $email = $_POST['email'] ?? '';
             $phone = $_POST['phone'] ?? '';
             $address = $_POST['address'] ?? '';
             if ($action === 'create_supplier') {
-                if (createSupplier($name, $contact, $email, $phone, $address)) {
-                    $_SESSION['flash_message'] = "Supplier <strong>" . htmlspecialchars($name) . "</strong> created successfully.";
+                if (createSupplier($company_name, $contact, $email, $phone, $address)) {
+                    $_SESSION['flash_message'] = "Supplier <strong>" . htmlspecialchars($company_name) . "</strong> created successfully.";
                     $_SESSION['flash_message_type'] = 'success';
                 } else {
                     $_SESSION['flash_message'] = "Failed to create supplier.";
@@ -101,8 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             } else {
                 $id = $_POST['supplier_id'] ?? 0;
-                if (updateSupplier($id, $name, $contact, $email, $phone, $address)) {
-                    $_SESSION['flash_message'] = "Supplier <strong>" . htmlspecialchars($name) . "</strong> updated successfully.";
+                if (updateSupplier($id, $company_name, $contact, $email, $phone, $address)) {
+                    $_SESSION['flash_message'] = "Supplier <strong>" . htmlspecialchars($company_name) . "</strong> updated successfully.";
                     $_SESSION['flash_message_type'] = 'success';
                 } else {
                     $_SESSION['flash_message'] = "Failed to update supplier.";
@@ -159,6 +160,7 @@ foreach ($purchaseOrders as $po) {
   <link rel="stylesheet" href="../assets/css/sidebar.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha384-nRgPTkuX86pH8yjPJUAFuASXQSSl2/bBUiNV47vSYpKFxHJhbcrGnmlYpYJMeD7a" crossorigin="anonymous">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="../assets/js/custom-datetime-picker.js"></script>
 </head>
 <body class="sidebar-active">
   <div class="sidebar" id="sidebar"> <?php include '../partials/sidebar.php'; ?> </div>
@@ -293,7 +295,7 @@ foreach ($purchaseOrders as $po) {
             <div class="table-container">
                 <table class="data-table">
                     <thead>
-                        <tr><th>Supplier Name</th><th>Contact Person</th><th>Email</th><th>Phone</th><th>Action</th></tr>
+                        <tr><th>Company Name</th><th>Contact Person</th><th>Email</th><th>Phone</th><th>Action</th></tr>
                     </thead>
                     <tbody>
                         <?php foreach($suppliers as $supplier): ?>
@@ -648,5 +650,23 @@ foreach ($purchaseOrders as $po) {
     
   </script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script>
+    // Ensure datetime pickers are initialized after all other scripts load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add a small delay to ensure all other components are initialized first
+      setTimeout(function() {
+        if (window.reinitializeCustomDateTimePickers) {
+          window.reinitializeCustomDateTimePickers();
+        }
+      }, 100);
+    });
+    
+    // Also initialize on page show (for back/forward navigation)
+    window.addEventListener('pageshow', function() {
+      if (window.reinitializeCustomDateTimePickers) {
+        window.reinitializeCustomDateTimePickers();
+      }
+    });
+  </script>
 </body>
 </html>

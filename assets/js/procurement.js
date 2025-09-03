@@ -12,10 +12,13 @@ function openCreatePOModal() {
     if (modal && window.openModal) {
         window.openModal(modal);
         
-        // Initialize custom dropdowns in the modal
+        // Initialize custom dropdowns and datetime pickers in the modal
         requestAnimationFrame(() => {
             if (window.reinitializeCustomDropdowns) {
                 window.reinitializeCustomDropdowns();
+            }
+            if (window.reinitializeCustomDateTimePickers) {
+                window.reinitializeCustomDateTimePickers();
             }
         });
     }
@@ -275,7 +278,7 @@ function openEditSupplierModal(supplier) {
     document.getElementById('supplierModalSubtitle').innerText = 'Update existing supplier information and contact details.';
     document.getElementById('formAction').value = 'update_supplier';
     document.getElementById('supplierId').value = supplier.id;
-    document.getElementById('supplier_name').value = supplier.supplier_name;
+    document.getElementById('company_name').value = supplier.supplier_name;
     document.getElementById('contact_person').value = supplier.contact_person;
     document.getElementById('email').value = supplier.email;
     document.getElementById('phone').value = supplier.phone;

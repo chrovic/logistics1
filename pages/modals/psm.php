@@ -19,8 +19,8 @@
       
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div class="mb-5">
-          <label for="supplier_name" class="block text-sm font-semibold mb-2 text-[var(--text-color)]">Supplier Name</label>
-          <input type="text" name="supplier_name" id="supplier_name" required class="w-full p-2.5 border border-[var(--input-border)] rounded-md bg-[var(--input-bg)] text-[var(--input-text)]" placeholder="Enter legal company name">
+          <label for="company_name" class="block text-sm font-semibold mb-2 text-[var(--text-color)]">Company Name</label>
+          <input type="text" name="company_name" id="company_name" required class="w-full p-2.5 border border-[var(--input-border)] rounded-md bg-[var(--input-bg)] text-[var(--input-text)]" placeholder="Enter company name">
         </div>
         
         <div class="mb-5">
@@ -90,7 +90,7 @@
         </select>
       </div>
       
-      <div class="mb-6">
+      <div class="mb-5">
         <label for="quantity_po" class="block text-sm font-semibold mb-2 text-[var(--text-color)]">Quantity</label>
         <div class="relative w-1/2">
             <input type="number" name="quantity_po" id="quantity_po" min="1" required class="w-full p-2.5 pr-8 border border-[var(--input-border)] rounded-md bg-[var(--input-bg)] text-[var(--input-text)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" placeholder="e.g., 50">
@@ -103,6 +103,11 @@
                 </button>
             </div>
         </div>
+      </div>
+      
+      <div class="mb-6">
+        <label for="ends_at_po" class="block text-sm font-semibold mb-2 text-[var(--text-color)]">Ends At</label>
+        <input type="datetime-local" name="ends_at_po" id="ends_at_po" required class="custom-datetime-picker-input w-full p-2.5 border border-[var(--input-border)] rounded-md bg-[var(--input-bg)] text-[var(--input-text)]" placeholder="Select bid deadline">
       </div>
       
       <div class="flex justify-end gap-3">

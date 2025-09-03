@@ -7,7 +7,7 @@ $success_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $supplier_data = [
-        'supplier_name' => $_POST['supplier_name'],
+        'company_name' => $_POST['company_name'],
         'contact_person' => $_POST['contact_person'],
         'email' => $_POST['email'],
         'phone' => $_POST['phone'],
@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $success_message = "Your application is pending for approval. Please check your email for the approval status.";
         // Clear form data on success
         $supplier_data = [
-            'supplier_name' => '',
+            'company_name' => '',
             'contact_person' => '',
             'email' => '',
             'phone' => '',
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 } else {
     // Initialize empty form data for first load
     $supplier_data = [
-        'supplier_name' => '',
+        'company_name' => '',
         'contact_person' => '',
         'email' => '',
         'phone' => '',
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="form-grid">
               <div class="form-column">
-                <input type="text" name="supplier_name" placeholder="Company Name" required value="<?php echo htmlspecialchars($supplier_data['supplier_name']); ?>">
+                <input type="text" name="company_name" placeholder="Company Name" required value="<?php echo htmlspecialchars($supplier_data['company_name']); ?>">
                 <input type="email" name="email" placeholder="Email" required value="<?php echo htmlspecialchars($supplier_data['email']); ?>" 
                        id="emailField" <?php echo (isset($error_message) && strpos($error_message, 'Email address already registered') !== false) ? 'class="error-field"' : ''; ?>>
                 <input type="text" name="username" placeholder="Username" required value="<?php echo htmlspecialchars($supplier_data['username']); ?>" 

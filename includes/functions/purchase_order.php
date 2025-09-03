@@ -9,9 +9,10 @@ require_once __DIR__ . '/supplier.php'; // Include supplier functions for notifi
  * @param int|null $supplier_id Can be null initially.
  * @param string $item_name The name of the item being ordered.
  * @param int $quantity The quantity required.
+ * @param string|null $ends_at The bid deadline in datetime format.
  * @return bool True on success, false on failure.
  */
-function createPurchaseOrder($supplier_id, $item_name, $quantity) {
+function createPurchaseOrder($supplier_id, $item_name, $quantity, $ends_at = null) {
     if (empty($item_name) || !is_numeric($quantity) || $quantity <= 0) {
         return false;
     }
@@ -21,8 +22,8 @@ function createPurchaseOrder($supplier_id, $item_name, $quantity) {
     // If a specific supplier is selected, create as 'Pending'
     $status = ($supplier_id === null) ? 'Open for Bidding' : 'Pending';
     
-    $stmt = $conn->prepare("INSERT INTO purchase_orders (supplier_id, item_name, quantity, status) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("isis", $supplier_id, $item_name, $quantity, $status);
+    $stmt = $conn->prepare("INSERT INTO purchase_orders (supplier_id, item_name, quantity, status, ends_at) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("isiss", $supplier_id, $item_name, $quantity, $status, $ends_at);
     $success = $stmt->execute();
     
     // If created as 'Open for Bidding', notify all approved suppliers

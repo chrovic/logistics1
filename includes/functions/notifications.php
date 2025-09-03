@@ -41,6 +41,34 @@ function getAllNotificationsBySupplier($supplier_id) {
 }
 
 /**
+ * Retrieves recent award and rejection notifications for a specific supplier.
+ * @param int $supplier_id The supplier's ID.
+ * @param int $limit Maximum number of notifications to retrieve.
+ * @param bool $unread_only Whether to get only unread notifications.
+ * @return array An array of award/rejection notification records.
+ */
+function getRecentAwardNotificationsBySupplier($supplier_id, $limit = 5, $unread_only = true) {
+    if (!$supplier_id) return [];
+    $conn = getDbConnection();
+    
+    // Build the query based on whether we want unread only
+    $query = "SELECT * FROM notifications WHERE supplier_id = ? AND (message LIKE '%Congratulations%' OR message LIKE '%awarded%' OR message LIKE '%not selected%' OR message LIKE '%rejected%')";
+    if ($unread_only) {
+        $query .= " AND is_read = 0";
+    }
+    $query .= " ORDER BY created_at DESC LIMIT ?";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("ii", $supplier_id, $limit);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $notifications = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    $stmt->close();
+    $conn->close();
+    return $notifications;
+}
+
+/**
  * Counts the number of UNREAD notifications for a specific supplier.
  * @param int $supplier_id The supplier's ID.
  * @return int The count of unread notifications.
