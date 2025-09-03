@@ -1,6 +1,7 @@
 <?php
 // Logistic1/includes/functions/bids.php
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/terms_generate.php';
 
 /**
  * Retrieves all purchase orders with the status 'Open for Bidding'.
@@ -67,6 +68,19 @@ function createBid($po_id, $supplier_id, $bid_amount, $notes) {
             require_once __DIR__ . '/notifications.php';
             $notification_message = "New bid submitted: {$details['supplier_name']} bid ₱" . number_format($bid_amount, 2) . " for '{$details['item_name']}' (PO #{$po_id})";
             createAdminNotification($notification_message, 'info', $bid_id, 'bid');
+            
+            // Generate Terms & Conditions Agreement Document
+            $bidData = getBidDataForDocument($bid_id);
+            if ($bidData) {
+                $documentPath = generateTermsAgreementDocument($bidData);
+                if ($documentPath) {
+                    // Document generated successfully and saved to DTRS
+                    error_log("Terms & Conditions agreement generated: " . $documentPath);
+                } else {
+                    // Log error but don't fail the bid submission
+                    error_log("Failed to generate Terms & Conditions agreement for bid ID: " . $bid_id);
+                }
+            }
         }
     }
     

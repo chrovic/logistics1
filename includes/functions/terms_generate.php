@@ -1,0 +1,372 @@
+<?php
+// includes/functions/terms_generate.php
+// Terms & Conditions agreement document generation using HTML with print-friendly CSS
+
+require_once __DIR__ . '/../config/db.php';
+
+/**
+ * Generates a professional Terms & Conditions document using HTML with print CSS
+ * @param array $bidData - Array containing bid information
+ * @return string|false - Returns the generated file path or false on failure
+ */
+function generateTermsAgreementDocument($bidData) {
+    try {
+        // Generate unique filename
+        $timestamp = date('Y-m-d_H-i-s');
+        $filename = "terms_agreement_{$bidData['bid_id']}_{$timestamp}.html";
+        $uploadDir = __DIR__ . '/../../uploads/terms_agreements/';
+        
+        // Create directory if it doesn't exist
+        if (!file_exists($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        $filePath = $uploadDir . $filename;
+        
+        // Generate professional HTML content
+        $htmlContent = generateProfessionalHTML($bidData);
+        
+        // Save the file
+        $success = file_put_contents($filePath, $htmlContent);
+        
+        if ($success) {
+            // Store the document in the database
+            $relativePath = 'uploads/terms_agreements/' . $filename;
+            $documentId = storeTermsDocument($filename, $relativePath, $bidData);
+            
+            if ($documentId) {
+                error_log("Terms Agreement document generated: " . $relativePath);
+                return $relativePath;
+            }
+        }
+        
+        return false;
+        
+    } catch (Exception $e) {
+        error_log("Document Generation Error: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Generates professional HTML content with print-friendly CSS (1-page optimized)
+ * @param array $bidData - Bid information
+ * @return string - HTML content
+ */
+function generateProfessionalHTML($bidData) {
+    $html = '<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms & Conditions Agreement - ' . htmlspecialchars($bidData['supplier_name']) . '</title>
+    <style>
+        /* Optimized for single-page printing with better spacing */
+        @media print {
+            body { margin: 0; padding: 0.3cm; }
+            .no-print { display: none !important; }
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+            line-height: 1.35;
+            color: #2d3748;
+            max-width: 21cm;
+            margin: 0 auto;
+            padding: 0.8cm;
+            background: white;
+            font-size: 13px;
+        }
+        
+        .document-header {
+            text-align: center;
+            border-bottom: 2px solid #9ca3af;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .document-header h1 {
+            color: #2563eb;
+            font-size: 22px;
+            font-weight: 700;
+            margin: 0 0 3px 0;
+            letter-spacing: 0.5px;
+        }
+        
+        .document-header .subtitle {
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .agreement-info {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .agreement-info h2 {
+            color: #374151;
+            font-size: 15px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 7px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
+        
+        .info-value {
+            font-size: 12px;
+            color: #1f2937;
+            font-weight: 500;
+        }
+        
+        .terms-section {
+            margin-bottom: 11px;
+        }
+        
+        .terms-section h3 {
+            color: #374151;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0 0 5px 0;
+            padding: 3px 0;
+        }
+        
+        .terms-section p {
+            margin: 0 0 5px 0;
+            text-align: justify;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+        
+        .terms-list {
+            font-size: 12px;
+            line-height: 1.25;
+            margin: 3px 0;
+        }
+        
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4b5563;
+            color: white;
+            border: none;
+            padding: 15px 27px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+            z-index: 1000;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .print-button:hover {
+            background: #374151;
+        }
+        
+        .print-button svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+        
+        .acceptance-notice {
+            background: #f3f4f6;
+            border: 1px solid #9ca3af;
+            border-radius: 5px;
+            padding: 8px;
+            margin: 8px 0 0 0;
+            text-align: center;
+            font-weight: 600;
+            color: #374151;
+            font-size: 12px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 0.8cm; font-size: 12px; }
+            .info-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-printer"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 14h.01"></path><path d="M10 14h.01"></path><path d="M14 14h.01"></path><path d="M18 14h.01"></path></svg> Print to PDF</button>
+    
+    <div class="document-header">
+        <h1>TERMS & CONDITIONS AGREEMENT</h1>
+        <p class="subtitle">LOGISTICS 1 PROCUREMENT SYSTEM</p>
+    </div>
+
+    <div class="agreement-info">
+        <h2>Agreement Details</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Agreement ID</div>
+                <div class="info-value">TA-' . str_pad($bidData['bid_id'], 6, '0', STR_PAD_LEFT) . '</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Supplier</div>
+                <div class="info-value">' . htmlspecialchars($bidData['supplier_name']) . '</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Item Description</div>
+                <div class="info-value">' . htmlspecialchars($bidData['item_name']) . '</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Bid Amount</div>
+                <div class="info-value">₱' . number_format($bidData['bid_amount'], 2) . '</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Purchase Order ID</div>
+                <div class="info-value">' . $bidData['po_id'] . '</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Agreement Date</div>
+                <div class="info-value">' . date('F j, Y') . '</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="terms-section">
+        <h3>1. Bid Commitment & Pricing</h3>
+        <p>By submitting this bid, the supplier agrees that: <span class="terms-list">all bids are binding and cannot be withdrawn once submitted; bid pricing remains valid for 30 days; the supplier commits to honor the quoted price and delivery terms; this agreement becomes legally binding upon acceptance.</span></p>
+    </div>
+
+    <div class="terms-section">
+        <h3>2. Delivery & Quality Standards</h3>
+        <p>The supplier agrees to: <span class="terms-list">deliver goods/services within agreed timeframe as per purchase order specifications; maintain quality standards and technical requirements; provide proper documentation and certifications; ensure goods are delivered in proper condition to specified location; replace defective items within 5 business days at supplier\'s cost.</span></p>
+    </div>
+
+    <div class="terms-section">
+        <h3>3. Payment & Financial Terms</h3>
+        <p>Payment conditions: <span class="terms-list">payment processed within 30 days of successful delivery and acceptance; all prices inclusive of applicable taxes unless specified otherwise; payment methods include bank transfer and corporate checks; invoices must include proper documentation and reference numbers.</span></p>
+    </div>
+
+    <div class="terms-section">
+        <h3>4. Legal Compliance & Confidentiality</h3>
+        <p>Both parties must: <span class="terms-list">comply with all applicable local, state, and federal regulations; maintain confidentiality of all bidding information and business processes; adhere to environmental and safety standards; follow ethical business practices and anti-corruption requirements; obtain proper insurance coverage during contract period.</span></p>
+    </div>
+
+    <div class="terms-section">
+        <h3>5. Liability & Risk Management</h3>
+        <p>Risk allocation: <span class="terms-list">supplier assumes responsibility for damages from non-compliance with agreed terms; both parties acknowledge force majeure provisions for unforeseeable circumstances; limitation of liability as specified in purchase order terms; dispute resolution through proper legal channels.</span></p>
+    </div>
+
+    <div class="terms-section">
+        <h3>6. Agreement Modification & Termination</h3>
+        <p>Agreement terms: <span class="terms-list">either party may terminate with 30 days written notice; early termination penalties as specified in purchase order; all outstanding obligations must be fulfilled upon termination; agreement amendments require written consent from both parties; contract governed by applicable business law.</span></p>
+    </div>
+
+    <div class="acceptance-notice">
+        By submitting this bid, both parties acknowledge they have read, understood, and agree to be bound by all terms and conditions stated above.
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.querySelector(".print-button").addEventListener("click", function() {
+                window.print();
+            });
+        });
+    </script>
+</body>
+</html>';
+
+    return $html;
+}
+
+/**
+ * Stores the generated terms document in the database
+ * @param string $filename - Document filename
+ * @param string $filePath - Relative file path
+ * @param array $bidData - Bid information
+ * @return int|false - Document ID or false on failure
+ */
+function storeTermsDocument($filename, $filePath, $bidData) {
+    try {
+        $conn = getDbConnection();
+        
+        $referenceNumber = 'TA-' . str_pad($bidData['bid_id'], 6, '0', STR_PAD_LEFT);
+        $documentType = 'Terms Agreement';
+        
+        $stmt = $conn->prepare(
+            "INSERT INTO documents (file_name, file_path, document_type, reference_number, upload_date) VALUES (?, ?, ?, ?, NOW())"
+        );
+        
+        $stmt->bind_param("ssss", $filename, $filePath, $documentType, $referenceNumber);
+        
+        if ($stmt->execute()) {
+            $documentId = $conn->insert_id;
+            $stmt->close();
+            $conn->close();
+            return $documentId;
+        }
+        
+        $stmt->close();
+        $conn->close();
+        return false;
+        
+    } catch (Exception $e) {
+        error_log("Database Error: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Gets bid data with supplier information for document generation
+ * @param int $bidId - Bid ID
+ * @return array|false - Bid data or false on failure
+ */
+function getBidDataForDocument($bidId) {
+    try {
+        $conn = getDbConnection();
+        
+        $stmt = $conn->prepare("
+            SELECT b.id as bid_id, b.po_id, b.bid_amount, b.notes,
+                   s.supplier_name, po.item_name, po.quantity
+            FROM bids b
+            JOIN suppliers s ON b.supplier_id = s.id
+            JOIN purchase_orders po ON b.po_id = po.id
+            WHERE b.id = ?
+        ");
+        
+        $stmt->bind_param("i", $bidId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = $result->fetch_assoc();
+        
+        $stmt->close();
+        $conn->close();
+        
+        return $data;
+        
+    } catch (Exception $e) {
+        error_log("Database Error: " . $e->getMessage());
+        return false;
+    }
+}
+
+?> 

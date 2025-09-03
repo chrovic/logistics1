@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Sep 03, 2025 at 05:11 PM
+-- Generation Time: Sep 03, 2025 at 09:30 PM
 -- Server version: 8.0.42
 -- PHP Version: 8.3.20
 
@@ -41,11 +41,7 @@ CREATE TABLE `admin_notifications` (
 --
 
 INSERT INTO `admin_notifications` (`id`, `message`, `type`, `related_id`, `related_type`, `created_at`) VALUES
-(12, 'New bid submitted: Summit Bulk Storage, Inc. bid ₱5,000.00 for \'Standard Pallets (48x40)\' (PO #5)', 'info', 33, 'bid', '2025-09-03 15:11:20'),
-(13, 'New bid submitted: Summit Bulk Storage, Inc. bid ₱6,000.00 for \'Bubble Wrap Rolls\' (PO #117)', 'info', 34, 'bid', '2025-09-03 15:50:51'),
-(14, 'New bid submitted: Summit Bulk Storage, Inc. bid ₱5,000.00 for \'Bubble Wrap Rolls\' (PO #117)', 'info', 35, 'bid', '2025-09-03 15:52:23'),
-(15, 'New bid submitted: Summit Bulk Storage, Inc. bid ₱6,000.00 for \'Work Gloves (Pairs)\' (PO #6)', 'info', 36, 'bid', '2025-09-03 15:54:31'),
-(16, 'New bid submitted: National Distribution Centers, Inc. bid ₱20,000.00 for \'Work Gloves (Pairs)\' (PO #6)', 'info', 37, 'bid', '2025-09-03 16:41:48');
+(32, 'New bid submitted: Summit Bulk Storage, Inc. bid ₱8,000.00 for \'Bubble Wrap Rolls\' (PO #118)', 'info', 54, 'bid', '2025-09-03 21:20:05');
 
 -- --------------------------------------------------------
 
@@ -66,12 +62,7 @@ CREATE TABLE `admin_notification_read_status` (
 --
 
 INSERT INTO `admin_notification_read_status` (`id`, `notification_id`, `user_id`, `is_read`, `read_at`) VALUES
-(45, 12, 1, 2, '2025-09-03 15:55:07'),
-(46, 12, 3, 1, '2025-09-03 15:12:57'),
-(47, 13, 1, 2, '2025-09-03 15:55:07'),
-(48, 14, 1, 2, '2025-09-03 15:55:07'),
-(49, 15, 1, 2, '2025-09-03 15:55:07'),
-(54, 16, 1, 1, '2025-09-03 16:41:58');
+(116, 32, 1, 1, '2025-09-03 21:20:16');
 
 -- --------------------------------------------------------
 
@@ -212,7 +203,8 @@ INSERT INTO `bids` (`id`, `po_id`, `supplier_id`, `bid_amount`, `notes`, `bid_da
 (23, 110, 15, 25.00, NULL, '2025-05-01 00:00:00', 'Awarded'),
 (24, 110, 16, 26.50, NULL, '2025-05-01 00:05:00', 'Rejected'),
 (25, 111, 16, 25.50, NULL, '2025-07-10 05:00:00', 'Awarded'),
-(26, 111, 15, 27.00, NULL, '2025-07-10 05:05:00', 'Rejected');
+(26, 111, 15, 27.00, NULL, '2025-07-10 05:05:00', 'Rejected'),
+(54, 118, 22, 8000.00, 'Interested.', '2025-09-03 21:20:05', 'Pending');
 
 -- --------------------------------------------------------
 
@@ -235,8 +227,7 @@ CREATE TABLE `documents` (
 --
 
 INSERT INTO `documents` (`id`, `file_name`, `file_path`, `document_type`, `reference_number`, `expiry_date`, `upload_date`) VALUES
-(1, 'sample-bill-of-lading.pdf', 'uploads/sample-bill-of-lading.pdf', 'Bill of Lading', 'BOL-789XYZ', '2026-12-31', '2025-08-21 17:48:11'),
-(2, 'terms_agreement_1_2025-09-03_16-41-48.html', 'uploads/terms_agreements/terms_agreement_1_2025-09-03_16-41-48.html', 'Terms Agreement', 'TA-000001', NULL, '2025-09-03 16:41:48');
+(22, 'terms_agreement_54_2025-09-03_21-20-05.html', 'uploads/terms_agreements/terms_agreement_54_2025-09-03_21-20-05.html', 'Terms Agreement', 'TA-000054', NULL, '2025-09-03 21:20:05');
 
 -- --------------------------------------------------------
 
@@ -668,8 +659,8 @@ CREATE TABLE `price_forecast_cache` (
 --
 
 INSERT INTO `price_forecast_cache` (`item_name`, `forecast_text`, `cached_at`) VALUES
-('Cardboard Boxes (Large)', 'The price of large cardboard boxes has fluctuated slightly with a general upward trend over the observed period. Recommendation: Wait.\n', '2025-09-02 18:36:03'),
-('Packing Tape Rolls', 'The price of packing tape rolls shows a general upward trend despite some minor fluctuations. Recommendation: Wait.\n', '2025-09-02 18:36:04'),
+('Cardboard Boxes (Large)', 'The price of large cardboard boxes shows a slight upward trend with some fluctuation, but not enough data to definitively predict future pricing. Recommendation: Monitor.\n', '2025-09-03 21:21:20'),
+('Packing Tape Rolls', 'The price of packing tape rolls shows a general upward trend despite some minor fluctuations. Recommendation: Wait.\n', '2025-09-03 21:21:21'),
 ('Shrink Wrap Rolls', 'Shrink wrap roll prices have shown a general upward trend from April to August 2025, with some minor fluctuations. Recommendation: Wait.\n', '2025-09-02 18:37:53');
 
 -- --------------------------------------------------------
@@ -767,7 +758,8 @@ INSERT INTO `purchase_orders` (`id`, `supplier_id`, `item_name`, `quantity`, `st
 (108, NULL, 'Packing Tape Rolls', 450, 'Awarded', '2025-07-18 03:45:00', NULL, NULL, NULL),
 (109, NULL, 'Packing Tape Rolls', 550, 'Awarded', '2025-08-22 08:00:00', NULL, NULL, NULL),
 (110, NULL, 'Cardboard Boxes (Large)', 1000, 'Awarded', '2025-05-01 00:00:00', NULL, NULL, NULL),
-(111, NULL, 'Cardboard Boxes (Large)', 1200, 'Awarded', '2025-07-10 05:00:00', NULL, NULL, NULL);
+(111, NULL, 'Cardboard Boxes (Large)', 1200, 'Awarded', '2025-07-10 05:00:00', NULL, NULL, NULL),
+(118, NULL, 'Bubble Wrap Rolls', 15, 'Open for Bidding', '2025-09-03 20:11:23', '2025-09-05 12:10:00', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -993,13 +985,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `admin_notifications`
 --
 ALTER TABLE `admin_notifications`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- AUTO_INCREMENT for table `admin_notification_read_status`
 --
 ALTER TABLE `admin_notification_read_status`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=117;
 
 --
 -- AUTO_INCREMENT for table `assets`
@@ -1017,13 +1009,13 @@ ALTER TABLE `asset_usage_logs`
 -- AUTO_INCREMENT for table `bids`
 --
 ALTER TABLE `bids`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
 
 --
 -- AUTO_INCREMENT for table `documents`
 --
 ALTER TABLE `documents`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `inventory`
@@ -1053,7 +1045,7 @@ ALTER TABLE `maintenance_schedules`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
 
 --
 -- AUTO_INCREMENT for table `procurement_requests`
@@ -1071,7 +1063,7 @@ ALTER TABLE `projects`
 -- AUTO_INCREMENT for table `purchase_orders`
 --
 ALTER TABLE `purchase_orders`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=118;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=119;
 
 --
 -- AUTO_INCREMENT for table `suppliers`

@@ -46,12 +46,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $po_id = $_POST['po_id'] ?? 0;
     $bid_amount = $_POST['bid_amount'] ?? 0;
     $notes = $_POST['notes'] ?? '';
+    $terms_agreement = isset($_POST['terms_agreement']) ? true : false;
+    
+    // Validate terms agreement
+    if (!$terms_agreement) {
+        $_SESSION['message'] = 'You must accept the Terms & Conditions to submit a bid.';
+        $_SESSION['message_type'] = 'error';
+        header("Location: supplier_bidding.php");
+        exit();
+    }
     
     // Get the logged-in supplier's ID
     $supplier_id = getSupplierIdFromUsername($_SESSION['username']);
 
     if ($supplier_id && createBid($po_id, $supplier_id, $bid_amount, $notes)) {
-        $_SESSION['message'] = 'Your bid has been submitted successfully! We\'ll notify you once the procurement team reviews it.';
+                    $_SESSION['message'] = 'Your bid has been submitted successfully! You will be notified if your bid is awarded or rejected.';
         $_SESSION['message_type'] = 'success';
     } else {
         $_SESSION['message'] = 'Failed to submit your bid. Please try again or contact support if the issue persists.';
