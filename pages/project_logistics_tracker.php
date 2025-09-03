@@ -106,10 +106,48 @@ $allSuppliers = getAllSuppliers(); // For the modal dropdown
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha384-nRgPTkuX86pH8yjPJUAFuASXQSSl2/bBUiNV47vSYpKFxHJhbcrGnmlYpYJMeD7a" crossorigin="anonymous">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="sidebar-active">
   <div class="sidebar" id="sidebar"> <?php include '../partials/sidebar.php'; ?> </div>
   <div class="main-content-wrapper" id="mainContentWrapper">
     <div class="content" id="mainContent">
+      <script>
+        // Apply persisted sidebar state immediately after elements exist
+        (function() {
+          // Skip if this is PJAX navigation - sidebar state is already preserved
+          if (window.__sidebarSessionCleared) {
+            return;
+          }
+          
+          // Use centralized function if available, otherwise fallback to inline logic
+          if (window.applySidebarState) {
+            window.applySidebarState();
+          } else {
+                          // Fallback for when main sidebar.js hasn't loaded yet
+              try {
+                // Clear any existing session state - always start maximized on page load
+                sessionStorage.removeItem('sidebarUserToggled');
+                sessionStorage.removeItem('sidebarCollapsed');
+                const shouldCollapse = false; // Always start maximized
+              
+              var sidebar = document.getElementById('sidebar');
+              var wrapper = document.getElementById('mainContentWrapper');
+              
+              if (sidebar && wrapper) {
+                sidebar.classList.remove('collapsed', 'initial-collapsed');
+                wrapper.classList.remove('expanded', 'initial-expanded');
+                
+                if (shouldCollapse) {
+                  sidebar.classList.add('initial-collapsed');
+                  wrapper.classList.add('initial-expanded');
+                  document.body.classList.remove('sidebar-active');
+                } else {
+                  document.body.classList.add('sidebar-active');
+                }
+              }
+            } catch (e) {}
+          }
+        })();
+      </script>
       <?php include '../partials/header.php'; ?>
       <div class="flex justify-between items-center">
         <h1 class="font-semibold page-title">Project Logistics Tracker</h1>
@@ -169,6 +207,7 @@ $allSuppliers = getAllSuppliers(); // For the modal dropdown
   <?php include 'modals/plt.php'; ?>
 
   <script src="../assets/js/sidebar.js"></script>
+  <script src="../assets/js/sidebar-tooltip.js"></script>
   <script src="../assets/js/script.js"></script>
   <script src="../assets/js/plt.js"></script>
   <!-- Lucide Icons -->

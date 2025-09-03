@@ -12,6 +12,62 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebarLinks = document.querySelectorAll('.sidebar a');
     const mainContentWrapper = document.getElementById('mainContentWrapper');
 
+    // Clear sidebar session state on fresh page load (not PJAX)
+    if (!window.__sidebarSessionCleared) {
+        try {
+            sessionStorage.removeItem('sidebarUserToggled');
+            sessionStorage.removeItem('sidebarCollapsed');
+            window.__sidebarSessionCleared = true;
+        } catch(e) {}
+    }
+
+    // --- Sidebar State Management ---
+    function applySidebarState(targetSidebar = null, targetWrapper = null, targetBarsIcon = null, targetXmarkIcon = null) {
+        try {
+            const currentSidebar = targetSidebar || document.getElementById('sidebar');
+            const currentWrapper = targetWrapper || document.getElementById('mainContentWrapper');
+            const currentBarsIcon = targetBarsIcon || document.getElementById('barsIcon');
+            const currentXmarkIcon = targetXmarkIcon || document.getElementById('xmarkIcon');
+            
+            if (!currentSidebar || !currentWrapper) return;
+            
+            // Always start maximized on fresh page loads (sessionStorage is cleared)
+            const shouldCollapse = false;
+            
+            // Clean up any existing sidebar state classes first
+            currentSidebar.classList.remove('collapsed', 'initial-collapsed');
+            currentWrapper.classList.remove('expanded', 'initial-expanded');
+            
+            // Apply the correct state
+            if (shouldCollapse) {
+                currentSidebar.classList.add('collapsed');
+                currentWrapper.classList.add('expanded');
+                document.body.classList.remove('sidebar-active');
+            } else {
+                document.body.classList.add('sidebar-active');
+            }
+            
+            // Set icon state
+            if (currentBarsIcon && currentXmarkIcon) {
+                if (shouldCollapse) {
+                    currentBarsIcon.classList.add('hidden');
+                    currentXmarkIcon.classList.remove('hidden');
+                } else {
+                    currentBarsIcon.classList.remove('hidden');
+                    currentXmarkIcon.classList.add('hidden');
+                }
+            }
+        } catch (_) { 
+            // Fallback: always show maximized
+            try {
+                document.body.classList.add('sidebar-active');
+            } catch (_) {}
+        }
+    }
+
+    // Make applySidebarState globally available
+    window.applySidebarState = applySidebarState;
+
     // --- Lightweight PJAX to keep sidebar persistent ---
     if (!window.__loadedScriptSrcs) {
         window.__loadedScriptSrcs = new Set();
@@ -125,27 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const newWrapper = doc.querySelector('#mainContentWrapper');
             const currentWrapper = document.getElementById('mainContentWrapper');
             if (newWrapper && currentWrapper) {
-                // Apply persisted sidebar state (mirrors inline snippets)
-                try {
-                    const savedCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-                    sidebar.classList.toggle('collapsed', savedCollapsed);
-                    currentWrapper.classList.toggle('expanded', savedCollapsed);
-                    document.body.classList.toggle('sidebar-active', !savedCollapsed);
-                    
-                    // Set icon state based on saved collapsed state during PJAX
-                    const barsIcon = document.getElementById('barsIcon');
-                    const xmarkIcon = document.getElementById('xmarkIcon');
-                    if (barsIcon && xmarkIcon) {
-                        if (savedCollapsed) {
-                            barsIcon.classList.add('hidden');
-                            xmarkIcon.classList.remove('hidden');
-                        } else {
-                            barsIcon.classList.remove('hidden');
-                            xmarkIcon.classList.add('hidden');
-                        }
-                    }
-                } catch (_) {}
-
                 // Handle page-specific styles
                 try {
                     // Remove existing page-specific styles and stylesheets
@@ -174,9 +209,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 } catch (_) {}
 
-                // Clone to avoid moving nodes across documents
+                // Only replace the content inside mainContentWrapper, not the wrapper itself
+                // This preserves sidebar state completely
                 const imported = document.importNode(newWrapper, true);
-                currentWrapper.replaceWith(imported);
+                currentWrapper.innerHTML = imported.innerHTML;
+                
+                // Copy any classes from the new wrapper to the current one
+                if (imported.className) {
+                    // Preserve sidebar-related classes, copy page-specific classes
+                    const currentClasses = currentWrapper.className.split(' ');
+                    const newClasses = imported.className.split(' ');
+                    const sidebarClasses = currentClasses.filter(cls => 
+                        cls.includes('expanded') || cls.includes('initial-expanded')
+                    );
+                    const pageClasses = newClasses.filter(cls => 
+                        !cls.includes('expanded') && !cls.includes('initial-expanded')
+                    );
+                    currentWrapper.className = [...sidebarClasses, ...pageClasses].join(' ');
+                }
 
                 // Replace page-specific modals outside the wrapper
                 try {
@@ -207,6 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Execute all scripts discovered in fetched document (external loaded once)
                 await executeScriptsFrom(doc, url);
+
+                // Sidebar is preserved during PJAX, no need to reapply state
 
                 // Ensure FontAwesome is loaded after PJAX navigation
                 setTimeout(() => {
@@ -277,7 +329,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // Reinitialize admin notifications AFTER DOM is ready
                     if (typeof window.initAdminNotifications === 'function') {
-                        console.log('Reinitializing admin notifications after PJAX...');
                         window.initAdminNotifications();
                     }
                 });
@@ -339,30 +390,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Apply persisted sidebar state
-    try {
-        const savedCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-        if (sidebar && mainContentWrapper) {
-            sidebar.classList.toggle('collapsed', savedCollapsed);
-            mainContentWrapper.classList.toggle('expanded', savedCollapsed);
-            document.body.classList.toggle('sidebar-active', !savedCollapsed);
-            
-            // Set initial icon state based on saved collapsed state
-            if (barsIcon && xmarkIcon) {
-                if (savedCollapsed) {
-                    barsIcon.classList.add('hidden');
-                    xmarkIcon.classList.remove('hidden');
-                } else {
-                    barsIcon.classList.remove('hidden');
-                    xmarkIcon.classList.add('hidden');
-                }
-            }
-            
-            // Clean any initial classes possibly added pre-render
-            sidebar.classList.remove('initial-collapsed');
-            mainContentWrapper.classList.remove('initial-expanded');
-        }
-    } catch (_) { /* no-op */ }
+    // Apply persisted sidebar state on initial load
+    applySidebarState(sidebar, mainContentWrapper, barsIcon, xmarkIcon);
 
     // Sidebar Toggle with delegated handler (so it works after PJAX)
     function syncSidebarStateClasses() {
@@ -386,12 +415,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const xmarkIcon = document.getElementById('xmarkIcon');
             if (!(sidebar && wrapper)) return;
             
-            sidebar.classList.toggle('collapsed');
-            wrapper.classList.toggle('expanded');
-            document.body.classList.toggle('sidebar-active');
+            // Clean up any existing state classes first
+            sidebar.classList.remove('collapsed', 'initial-collapsed');
+            wrapper.classList.remove('expanded', 'initial-expanded');
             
-            // Toggle icons without animation
-            if (sidebar.classList.contains('collapsed')) {
+            // Mark that user has toggled in this session
+            try {
+                sessionStorage.setItem('sidebarUserToggled', 'true');
+            } catch(_) {}
+            
+            // Toggle to opposite state (use sessionStorage instead of localStorage)
+            const wasCollapsed = sessionStorage.getItem('sidebarCollapsed') === 'true';
+            const nowCollapsed = !wasCollapsed;
+            
+            if (nowCollapsed) {
+                sidebar.classList.add('collapsed');
+                wrapper.classList.add('expanded');
+                document.body.classList.remove('sidebar-active');
+            } else {
+                document.body.classList.add('sidebar-active');
+            }
+            
+            // Toggle icons
+            if (nowCollapsed) {
                 barsIcon.classList.add('hidden');
                 xmarkIcon.classList.remove('hidden');
             } else {
@@ -399,7 +445,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 xmarkIcon.classList.add('hidden');
             }
             
-            try { localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed')); } catch(_) {}
+            // Save state to sessionStorage only (not across logins)
+            try { 
+                sessionStorage.setItem('sidebarCollapsed', nowCollapsed);
+            } catch(_) {}
         });
         window.__hamburgerDelegated = true;
     }

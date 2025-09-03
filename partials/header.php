@@ -64,8 +64,8 @@ if (isset($_SESSION['role']) && $_SESSION['role'] !== 'supplier') {
 
 <div class="header">
   <div class="w-10 h-10 flex items-center justify-center mr-2.5 rounded-full text-[var(--text-color)] cursor-pointer hover:bg-[var(--dropdown-item-hover)] transition-colors duration-300" id="hamburger">
-    <i class="fa-solid fa-bars-staggered text-xl" id="barsIcon"></i>
-    <i class="fa-solid fa-bars text-xl hidden" id="xmarkIcon"></i>
+    <i class="fa-solid fa-bars text-xl" id="barsIcon"></i>
+    <i class="fa-solid fa-bars-staggered text-xl hidden" id="xmarkIcon"></i>
   </div>
   <div>
     <h1><?php echo ($_SESSION['role'] === 'admin') ? 'Admin Panel' : 'Staff Panel'; ?> <span class="system-title">| LOGISTICS 1</span></h1>
