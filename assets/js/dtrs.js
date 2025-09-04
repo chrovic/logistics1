@@ -26,30 +26,48 @@ function openDocumentDetails(docData) {
     // Get file extension for display
     const fileExtension = docData.file_name.split('.').pop().toUpperCase();
     
-    // Determine file type icon and color (more visible in light mode)
-    let bgColor = 'bg-gray-600 dark:bg-gray-700';
-    let textColor = 'text-white font-bold dark:text-gray-300';
+    // Determine which SVG icon to use and badge styling
+    let svgIcon = '';
+    let badgeClass = '';
+    let displayType = fileExtension;
     
     switch(fileExtension.toLowerCase()) {
         case 'pdf':
-            bgColor = 'bg-red-600 dark:bg-red-900/30';
-            textColor = 'text-white font-bold dark:text-red-400';
+            svgIcon = '../assets/icons/pdf.svg';
+            badgeClass = 'bg-red-100 text-red-700';
+            break;
+        case 'html':
+        case 'htm':
+            svgIcon = '../assets/icons/pdf.svg';
+            badgeClass = 'bg-red-100 text-red-700';
+            displayType = 'PDF'; // Display as PDF for Terms Agreements
             break;
         case 'doc':
         case 'docx':
-            bgColor = 'bg-blue-600 dark:bg-blue-900/30';
-            textColor = 'text-white font-bold dark:text-blue-400';
+            svgIcon = '../assets/icons/doc.svg';
+            badgeClass = 'bg-blue-100 text-blue-700';
             break;
         case 'xls':
         case 'xlsx':
-            bgColor = 'bg-green-600 dark:bg-green-900/30';
-            textColor = 'text-white font-bold dark:text-green-400';
+            svgIcon = '../assets/icons/excel.svg';
+            badgeClass = 'bg-green-100 text-green-700';
             break;
         case 'jpg':
         case 'jpeg':
         case 'png':
-            bgColor = 'bg-purple-600 dark:bg-purple-900/30';
-            textColor = 'text-white font-bold dark:text-purple-400';
+        case 'gif':
+        case 'bmp':
+        case 'webp':
+            svgIcon = '../assets/icons/img.svg';
+            badgeClass = 'bg-purple-100 text-purple-700';
+            break;
+        case 'txt':
+            svgIcon = '../assets/icons/txt.svg';
+            badgeClass = 'bg-gray-100 text-gray-700';
+            break;
+        default:
+            svgIcon = '../assets/icons/doc.svg';
+            badgeClass = 'bg-gray-100 text-gray-700';
             break;
     }
     
@@ -58,9 +76,7 @@ function openDocumentDetails(docData) {
         <div class="flex items-start space-x-6">
             <!-- File Icon -->
             <div class="flex-shrink-0">
-                <div class="w-16 h-16 rounded-xl ${bgColor} flex items-center justify-center">
-                    <i data-lucide="file-text" class="w-8 h-8 ${textColor}"></i>
-                </div>
+                <img src="${svgIcon}" alt="${displayType} file" class="w-16 h-16 object-contain">
             </div>
             
             <!-- Document Information -->
@@ -81,8 +97,8 @@ function openDocumentDetails(docData) {
                         
                         <div>
                             <label class="block text-sm font-semibold text-[var(--text-color)] mb-1">File Type</label>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor} ${textColor}">
-                                ${fileExtension}
+                            <span class="px-2 py-1 font-semibold leading-tight text-xs rounded-full ${badgeClass}">
+                                ${displayType}
                             </span>
                         </div>
                     </div>
@@ -115,37 +131,34 @@ function openDocumentDetails(docData) {
         };
     }
     
-    // Reinitialize Lucide icons for the new content
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
+    // No need to reinitialize icons since we're using SVG images
     
     // Open the modal
-    if (window.openModal) {
-        window.openModal(modal);
-    }
+    openModal(modal);
 }
 
-// --- File Upload Drag & Drop Functions ---
-function validateDocumentFile(file, sizeLimit = 50 * 1024 * 1024) {
-    const sizeLimitText = sizeLimit === 5 * 1024 * 1024 ? '5MB' : '50MB';
+// --- File Upload Functions ---
+
+// Validate file type and size
+function validateDocumentFile(file) {
+    if (!file) return false;
     
-    // Validate file size
-    if (file.size > sizeLimit) {
+    // Validate file size (50MB limit)
+    if (file.size > 50000000) {
         if (window.showCustomAlert) {
-            showCustomAlert(`File size must be less than ${sizeLimitText}`, 'error', 4000, 'File Too Large');
+            showCustomAlert('File size exceeds 50MB limit', 'error', 4000, 'File Too Large');
         }
         return false;
     }
     
     // Validate file type
-    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png', 'text/plain'];
-    const allowedExtensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.txt'];
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'image/jpeg', 'image/png', 'text/plain'];
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png', '.txt'];
     const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
     
     if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
         if (window.showCustomAlert) {
-            showCustomAlert('Please select a valid file (PDF, DOC, DOCX, JPG, PNG, TXT)', 'error', 4000, 'Invalid File Type');
+            showCustomAlert('Please select a valid file (PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT)', 'error', 4000, 'Invalid File Type');
         }
         return false;
     }
@@ -153,124 +166,89 @@ function validateDocumentFile(file, sizeLimit = 50 * 1024 * 1024) {
     return true;
 }
 
+// Handle file selection for desktop upload
 function handleFileSelect(input) {
     const file = input.files[0];
-    if (file) {
-        if (validateDocumentFile(file)) {
-            displaySelectedFile(file);
-        } else {
-            input.value = '';
-        }
+    if (!file) return;
+    
+    if (!validateDocumentFile(file)) {
+        input.value = '';
+        return;
+    }
+    
+    updateDocumentPreview(file, false);
+}
+
+// Handle file selection for mobile upload
+function handleMobileFileSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    if (!validateDocumentFile(file)) {
+        input.value = '';
+        return;
+    }
+    
+    updateDocumentPreview(file, true);
+}
+
+// Update document preview
+function updateDocumentPreview(file, isMobile = false) {
+    if (isMobile) {
+        const promptElement = document.getElementById('mobileDocumentUploadPrompt');
+        const previewContainer = document.getElementById('mobileDocumentPreviewContainer');
+        const fileNameElement = document.getElementById('mobileSelectedFileName');
+        const fileSizeElement = document.getElementById('mobileSelectedFileSize');
+        
+        if (promptElement) promptElement.classList.add('hidden');
+        if (previewContainer) previewContainer.classList.remove('hidden');
+        
+        if (fileNameElement) fileNameElement.textContent = file.name;
+        if (fileSizeElement) fileSizeElement.textContent = formatFileSize(file.size);
+    } else {
+        const promptElement = document.getElementById('documentUploadPrompt');
+        const previewContainer = document.getElementById('documentPreviewContainer');
+        const fileNameElement = document.getElementById('selectedFileName');
+        const fileSizeElement = document.getElementById('selectedFileSize');
+        
+        if (promptElement) promptElement.classList.add('hidden');
+        if (previewContainer) previewContainer.classList.remove('hidden');
+        
+        if (fileNameElement) fileNameElement.textContent = file.name;
+        if (fileSizeElement) fileSizeElement.textContent = formatFileSize(file.size);
+    }
+    
+    // Add clear button functionality
+    const clearButton = document.querySelector(`[data-action="${isMobile ? 'clear-mobile-file' : 'clear-file'}"]`);
+    if (clearButton) {
+        clearButton.onclick = function() {
+            clearDocumentPreview(isMobile);
+        };
     }
 }
 
-function handleFileDrop(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    const dropZone = document.getElementById('dropZone');
-    const dragOverlay = document.getElementById('documentDragOverlay');
-    
-    // Remove drag highlighting
-    if (dropZone) {
-        dropZone.classList.remove('border-blue-400', 'bg-blue-50/30', 'dark:bg-blue-500/10');
-    }
-    if (dragOverlay) {
-        dragOverlay.classList.add('hidden');
-    }
-    
-    const files = event.dataTransfer.files;
-    if (files.length > 0) {
-        const file = files[0];
+// Clear document preview
+function clearDocumentPreview(isMobile = false) {
+    if (isMobile) {
+        const promptElement = document.getElementById('mobileDocumentUploadPrompt');
+        const previewContainer = document.getElementById('mobileDocumentPreviewContainer');
+        const fileInput = document.getElementById('mobileDocumentFile');
         
-        // Validate the file
-        if (!validateDocumentFile(file)) {
-            return;
-        }
+        if (promptElement) promptElement.classList.remove('hidden');
+        if (previewContainer) previewContainer.classList.add('hidden');
+        if (fileInput) fileInput.value = '';
+    } else {
+        const promptElement = document.getElementById('documentUploadPrompt');
+        const previewContainer = document.getElementById('documentPreviewContainer');
+        const fileInput = document.getElementById('documentFile');
         
-        // Update the file input with the dropped file
-        const input = document.getElementById('documentFile');
-        if (input) {
-            try {
-                const dt = new DataTransfer();
-                dt.items.add(file);
-                input.files = dt.files;
-            } catch (err) {
-                // Fallback
-                Object.defineProperty(input, 'files', {
-                    value: files,
-                    configurable: true
-                });
-            }
-        }
-        
-        displaySelectedFile(file);
+        if (promptElement) promptElement.classList.remove('hidden');
+        if (previewContainer) previewContainer.classList.add('hidden');
+        if (fileInput) fileInput.value = '';
     }
 }
 
-function handleDragOver(event) {
-    event.preventDefault();
-    event.stopPropagation();
-}
-
-function handleDragEnter(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    const dropZone = document.getElementById('dropZone');
-    const dragOverlay = document.getElementById('documentDragOverlay');
-    
-    if (dropZone) {
-        dropZone.classList.add('border-blue-400', 'bg-blue-50/30', 'dark:bg-blue-500/10');
-    }
-    if (dragOverlay) {
-        dragOverlay.classList.remove('hidden');
-    }
-}
-
-function handleDragLeave(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    // Only remove highlight if we're leaving the drop zone entirely
-    if (!event.currentTarget.contains(event.relatedTarget)) {
-        const dropZone = document.getElementById('dropZone');
-        const dragOverlay = document.getElementById('documentDragOverlay');
-        
-        if (dropZone) {
-            dropZone.classList.remove('border-blue-400', 'bg-blue-50/30', 'dark:bg-blue-500/10');
-        }
-        if (dragOverlay) {
-            dragOverlay.classList.add('hidden');
-        }
-    }
-}
-
-function displaySelectedFile(file) {
-    const previewContainer = document.getElementById('documentPreviewContainer');
-    const fileName = document.getElementById('selectedFileName');
-    const fileSize = document.getElementById('selectedFileSize');
-    const uploadPrompt = document.getElementById('documentUploadPrompt');
-    
-    if (previewContainer && fileName) {
-        fileName.textContent = file.name;
-        if (fileSize) {
-            fileSize.textContent = formatFileSize(file.size);
-        }
-        
-        // Hide upload prompt and show preview
-        if (uploadPrompt) {
-            uploadPrompt.classList.add('hidden');
-        }
-        previewContainer.classList.remove('hidden');
-        
-        // Reinitialize Lucide icons
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-    }
-}
-
+// Format file size for display
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -279,213 +257,180 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-function clearFileSelection() {
-    const input = document.getElementById('documentFile');
-    const previewContainer = document.getElementById('documentPreviewContainer');
-    const uploadPrompt = document.getElementById('documentUploadPrompt');
-    
-    // Clear the file input
-    if (input) {
-        input.value = '';
-    }
-    
-    // Hide preview and show upload prompt
-    if (previewContainer) {
-        previewContainer.classList.add('hidden');
-    }
-    if (uploadPrompt) {
-        uploadPrompt.classList.remove('hidden');
-    }
-    
-    // Reinitialize Lucide icons
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
+// --- Drag and Drop Functions ---
+
+function handleDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    showDragOverlay(false);
+}
+
+function handleDragEnter(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    showDragOverlay(false);
+}
+
+function handleDragLeave(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    // Only hide if we're leaving the drop zone completely
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+        hideDragOverlay(false);
     }
 }
 
-// --- Mobile Upload Modal Functions ---
+function handleFileDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    hideDragOverlay(false);
+    
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        const fileInput = document.getElementById('documentFile');
+        if (fileInput) {
+            fileInput.files = files;
+            handleFileSelect(fileInput);
+        }
+    }
+}
+
+function showDragOverlay(isMobile = false) {
+    const overlayId = isMobile ? 'mobileDocumentDragOverlay' : 'documentDragOverlay';
+    const overlay = document.getElementById(overlayId);
+    if (overlay) overlay.classList.remove('hidden');
+}
+
+function hideDragOverlay(isMobile = false) {
+    const overlayId = isMobile ? 'mobileDocumentDragOverlay' : 'documentDragOverlay';
+    const overlay = document.getElementById(overlayId);
+    if (overlay) overlay.classList.add('hidden');
+}
+
+// --- Mobile Modal Functions ---
+
 function openMobileUploadModal() {
     const modal = document.getElementById('mobileUploadModal');
-    const form = document.getElementById('mobileUploadForm');
-    
-    if (form) {
-        form.reset();
-        clearMobileFileSelection();
-    }
-    
-    if (modal && window.openModal) {
-        window.openModal(modal);
-        
-        // Reinitialize Lucide icons after modal opens
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
+    if (modal) {
+        openModal(modal);
     }
 }
 
 function closeMobileUploadModal() {
     const modal = document.getElementById('mobileUploadModal');
-    if (modal && window.closeModal) {
-        window.closeModal(modal);
+    if (modal) {
+        closeModal(modal);
+        clearDocumentPreview(true);
     }
 }
 
-function handleMobileFileSelect(input) {
-    const file = input.files[0];
-    if (file) {
-        if (validateDocumentFile(file, 5 * 1024 * 1024)) { // 5MB limit for mobile
-            displayMobileSelectedFile(file);
-        } else {
-            input.value = '';
-        }
-    }
-}
+// --- Event Listeners ---
 
-function displayMobileSelectedFile(file) {
-    const previewContainer = document.getElementById('mobileDocumentPreviewContainer');
-    const fileName = document.getElementById('mobileSelectedFileName');
-    const fileSize = document.getElementById('mobileSelectedFileSize');
-    const uploadPrompt = document.getElementById('mobileDocumentUploadPrompt');
-    
-    if (previewContainer && fileName) {
-        fileName.textContent = file.name;
-        if (fileSize) {
-            fileSize.textContent = formatFileSize(file.size);
-        }
-        
-        // Hide upload prompt and show preview
-        if (uploadPrompt) {
-            uploadPrompt.classList.add('hidden');
-        }
-        previewContainer.classList.remove('hidden');
-        
-        // Reinitialize Lucide icons
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-    }
-}
-
-function clearMobileFileSelection() {
-    const input = document.getElementById('mobileDocumentFile');
-    const previewContainer = document.getElementById('mobileDocumentPreviewContainer');
-    const uploadPrompt = document.getElementById('mobileDocumentUploadPrompt');
-    
-    // Clear the file input
-    if (input) {
-        input.value = '';
-    }
-    
-    // Hide preview and show upload prompt
-    if (previewContainer) {
-        previewContainer.classList.add('hidden');
-    }
-    if (uploadPrompt) {
-        uploadPrompt.classList.remove('hidden');
-    }
-    
-    // Reinitialize Lucide icons
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-}
-
-/**
- * Initialize DTRS page functionality
- */
-function initDTRS() {
-    // Initialize drag and drop functionality for desktop
-    const fileInput = document.getElementById('documentFile');
-    const dropZone = document.getElementById('dropZone');
-    
-    if (fileInput && dropZone) {
-        // Prevent default drag behaviors
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-            document.body.addEventListener(eventName, preventDefaults, false);
-        });
-        
-        // Highlight drop zone when item is dragged over it
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, highlight, false);
-        });
-        
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, unhighlight, false);
-        });
-        
-        // Handle dropped files
-        dropZone.addEventListener('drop', handleFileDrop, false);
-        
-        // Add change event listener to file input to handle manual file selection
-        fileInput.addEventListener('change', function(e) {
-            if (e.target.files && e.target.files.length > 0) {
-                displaySelectedFile(e.target.files[0]);
-            }
-        });
-    }
-    
-    // Initialize mobile upload button
+document.addEventListener('DOMContentLoaded', function() {
+    // Mobile upload button
     const mobileUploadBtn = document.getElementById('mobileUploadBtn');
     if (mobileUploadBtn) {
         mobileUploadBtn.addEventListener('click', openMobileUploadModal);
     }
     
-    // Set up clear button event listeners
-    document.addEventListener('click', function(e) {
-        const clearButton = e.target.closest('button[data-action="clear-file"]');
-        if (clearButton) {
-            clearFileSelection();
-        }
+    // Set up drag and drop for desktop upload area
+    const dropZone = document.getElementById('dropZone');
+    if (dropZone) {
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
         
-        const mobileClearButton = e.target.closest('button[data-action="clear-mobile-file"]');
-        if (mobileClearButton) {
-            clearMobileFileSelection();
+        // Handle drag events
+        dropZone.addEventListener('dragenter', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            showDragOverlay(false);
+        });
+        
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            showDragOverlay(false);
+        });
+        
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Only hide if leaving the drop zone completely
+            if (!dropZone.contains(e.relatedTarget)) {
+                hideDragOverlay(false);
+            }
+        });
+        
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            hideDragOverlay(false);
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const fileInput = document.getElementById('documentFile');
+                if (fileInput) {
+                    fileInput.files = files;
+                    handleFileSelect(fileInput);
+                }
+            }
+        });
+    }
+    
+    // Clear file buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('[data-action="clear-file"]') || e.target.closest('[data-action="clear-file"]')) {
+            clearDocumentPreview(false);
+        }
+        if (e.target.matches('[data-action="clear-mobile-file"]') || e.target.closest('[data-action="clear-mobile-file"]')) {
+            clearDocumentPreview(true);
         }
     });
     
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
+    // Form submissions
+    const uploadForm = document.getElementById('uploadDocumentForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('documentFile');
+            if (fileInput && fileInput.files.length === 0) {
+                e.preventDefault();
+                if (window.showCustomAlert) {
+                    showCustomAlert('Please select a file to upload', 'error', 4000, 'No File Selected');
+                }
+                return;
+            }
+        });
     }
     
-    function highlight(e) {
-        dropZone.classList.remove('border-[var(--card-border)]', 'bg-[var(--input-bg)]');
-        dropZone.classList.add('!border-blue-400', '!bg-blue-50', 'dark:!bg-blue-900/20');
+    const mobileUploadForm = document.getElementById('mobileUploadForm');
+    if (mobileUploadForm) {
+        mobileUploadForm.addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('mobileDocumentFile');
+            if (fileInput && fileInput.files.length === 0) {
+                e.preventDefault();
+                if (window.showCustomAlert) {
+                    showCustomAlert('Please select a file to upload', 'error', 4000, 'No File Selected');
+                }
+                return;
+            }
+        });
     }
-    
-    function unhighlight(e) {
-        dropZone.classList.remove('!border-blue-400', '!bg-blue-50', 'dark:!bg-blue-900/20');
-        dropZone.classList.add('border-[var(--card-border)]', 'bg-[var(--input-bg)]');
-    }
-}
+});
+
+// --- Global Functions for Modal Integration ---
 
 // Make functions globally available
-window.initDTRS = initDTRS;
 window.openDocumentDetails = openDocumentDetails;
-window.clearFileSelection = clearFileSelection;
-window.openMobileUploadModal = openMobileUploadModal;
-window.closeMobileUploadModal = closeMobileUploadModal;
-window.handleMobileFileSelect = handleMobileFileSelect;
-window.clearMobileFileSelection = clearMobileFileSelection;
 window.handleFileSelect = handleFileSelect;
+window.handleMobileFileSelect = handleMobileFileSelect;
 window.handleFileDrop = handleFileDrop;
 window.handleDragOver = handleDragOver;
 window.handleDragEnter = handleDragEnter;
 window.handleDragLeave = handleDragLeave;
-
-// Initialize Lucide Icons
-function initLucideIcons() {
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-}
-
-// Make Lucide icon initialization globally available for this page
-window.refreshLucideIcons = initLucideIcons;
-
-// Initialize everything when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    initDTRS();
-    initLucideIcons();
-}); 
+window.openMobileUploadModal = openMobileUploadModal;
+window.closeMobileUploadModal = closeMobileUploadModal; 

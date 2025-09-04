@@ -23,7 +23,7 @@
                  id="mobileDocumentFile" 
                  required 
                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                 accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                 accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt"
                  onchange="handleMobileFileSelect(this)">
           
           <!-- Upload Area -->
@@ -35,7 +35,7 @@
                 <i data-lucide="cloud-upload" class="w-6 h-6 text-gray-500 dark:text-gray-400"></i>
               </div>
               <p class="text-sm font-medium text-[var(--text-color)] mb-1">Tap to select your document</p>
-              <p class="text-xs text-[var(--placeholder-color)]">PDF, DOC, DOCX, JPG, PNG, TXT up to 5MB</p>
+              <p class="text-xs text-[var(--placeholder-color)]">PDF, DOC, XLSX, XLS, JPG, PNG, TXT up to 5MB</p>
             </div>
             
             <!-- Preview State - Centered like upload prompt -->

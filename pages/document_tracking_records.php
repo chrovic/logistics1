@@ -160,40 +160,49 @@ $documents = getAllDocuments();
                     $fileExtension = pathinfo($doc['file_name'], PATHINFO_EXTENSION);
                     $fileTypeDisplay = strtoupper($fileExtension);
                     
-                    // Determine file type icon and color (more visible in light mode)
-                    $iconClass = 'w-10 h-10';
-                    $bgColor = 'bg-gray-600 dark:bg-gray-700';
-                    $textColor = 'text-white font-bold dark:text-gray-300';
-                    
+                    // Determine which SVG icon to use based on file extension
+                    $svgIcon = '';
                     switch(strtolower($fileExtension)) {
                       case 'pdf':
-                        $bgColor = 'bg-red-600 dark:bg-red-900/30';
-                        $textColor = 'text-white font-bold dark:text-red-400';
+                        $svgIcon = '../assets/icons/pdf.svg';
+                        break;
+                      case 'html':
+                      case 'htm':
+                        // HTML files (Terms Agreements) should be treated as PDF
+                        $svgIcon = '../assets/icons/pdf.svg';
+                        $fileTypeDisplay = 'PDF'; // Display as PDF instead of HTML
                         break;
                       case 'doc':
                       case 'docx':
-                        $bgColor = 'bg-blue-600 dark:bg-blue-900/30';
-                        $textColor = 'text-white font-bold dark:text-blue-400';
+                        $svgIcon = '../assets/icons/doc.svg';
                         break;
                       case 'xls':
                       case 'xlsx':
-                        $bgColor = 'bg-green-600 dark:bg-green-900/30';
-                        $textColor = 'text-white font-bold dark:text-green-400';
+                        $svgIcon = '../assets/icons/excel.svg';
                         break;
                       case 'jpg':
                       case 'jpeg':
                       case 'png':
-                        $bgColor = 'bg-purple-600 dark:bg-purple-900/30';
-                        $textColor = 'text-white font-bold dark:text-purple-400';
+                      case 'gif':
+                      case 'bmp':
+                      case 'webp':
+                        $svgIcon = '../assets/icons/img.svg';
+                        break;
+                      case 'txt':
+                        $svgIcon = '../assets/icons/txt.svg';
+                        break;
+                      default:
+                        // Fallback for other file types - use a generic document icon
+                        $svgIcon = '../assets/icons/doc.svg';
                         break;
                     }
                   ?>
                   <div class="flex items-center p-4 bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg hover:shadow-md transition-shadow group">
                     <!-- File Type Icon -->
                     <div class="flex-shrink-0 mr-4">
-                      <div class="w-12 h-12 rounded-lg <?php echo $bgColor; ?> flex items-center justify-center">
-                        <i data-lucide="file-text" class="w-6 h-6 <?php echo $textColor; ?>"></i>
-                      </div>
+                      <img src="<?php echo htmlspecialchars($svgIcon); ?>" 
+                           alt="<?php echo htmlspecialchars($fileTypeDisplay); ?> file" 
+                           class="w-12 h-12 object-contain">
                     </div>
                     
                     <!-- Document Info -->
@@ -249,7 +258,7 @@ $documents = getAllDocuments();
                          id="documentFile" 
                          required 
                          class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                         accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt"
                          onchange="handleFileSelect(this)"
                          ondrop="handleFileDrop(event)"
                          ondragover="handleDragOver(event)"
@@ -265,7 +274,7 @@ $documents = getAllDocuments();
                         <i data-lucide="cloud-upload" class="w-6 h-6 text-gray-500 dark:text-gray-400"></i>
                       </div>
                       <p class="text-sm font-medium text-[var(--text-color)] mb-1">Drop your document here or click to browse</p>
-                      <p class="text-xs text-[var(--placeholder-color)]">DOC, PDF, XLSX, JPG up to 50MB</p>
+                      <p class="text-xs text-[var(--placeholder-color)]">PDF, DOC, XLSX, XLS, JPG, PNG, TXT up to 50MB</p>
                     </div>
                     
                     <!-- Preview State - Centered like upload prompt -->
