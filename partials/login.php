@@ -16,11 +16,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 }
 
 $error_message = '';
+$message_type = ''; // New variable to track message type
 $remembered_user = $_COOKIE['remember_user'] ?? '';
 
 // Check for session expired message
 if (isset($_GET['session_expired']) && $_GET['session_expired'] === 'true') {
     $error_message = 'Your session has expired. Please log in again.';
+    $message_type = 'session_expired'; // Set message type for styling
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -66,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     } else {
         $error_message = $authResult['message'];
+        $message_type = 'auth_error'; // Set message type for styling
     }
 }
 ?>
@@ -91,9 +94,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h2>Login</h2>
                     <form action="login.php" method="POST">
                         <?php if (!empty($error_message)): ?>
-                            <p style="color: #f01111ff; margin-bottom: 20px;">
-                              <?php echo htmlspecialchars($error_message); ?>
-                            </p>
+                            <div class="message-container <?php echo $message_type; ?>" id="messageContainer">
+                                <div class="message-content">
+                                    <span class="message-text"><?php echo htmlspecialchars($error_message); ?></span>
+                                    <button type="button" class="message-close" onclick="closeMessage()">
+                                        <i data-lucide="x"></i>
+                                    </button>
+                                </div>
+                            </div>
                         <?php endif; ?>
                         <input type="text" name="username" placeholder="Username" required value="<?php echo htmlspecialchars($remembered_user); ?>">
                         <div class="password-wrapper">
@@ -123,6 +131,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             passwordInput.setAttribute('type', type);
             this.innerHTML = type === 'text' ? '<i data-lucide="eye-closed"></i>' : '<i data-lucide="eye"></i>';
             lucide.createIcons();
+        });
+
+        // Message container auto-dismiss and close functionality
+        function closeMessage() {
+            const messageContainer = document.getElementById('messageContainer');
+            if (messageContainer) {
+                messageContainer.classList.add('fade-out');
+                setTimeout(() => {
+                    messageContainer.style.display = 'none';
+                }, 300);
+            }
+        }
+
+        // Auto-dismiss message after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageContainer = document.getElementById('messageContainer');
+            if (messageContainer) {
+                setTimeout(() => {
+                    closeMessage();
+                }, 5000);
+            }
         });
     </script>
 </body>
