@@ -83,9 +83,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
 <body>
+    <div class="mobile-header">
+        <div class="system-branding">
+            <img src="../assets/icons/slate2.svg" alt="SLATE Logo" class="system-logo">
+            <span class="system-title">Freight Management System</span>
+        </div>
+    </div>
+    
     <div class="main-container">
         <div class="login-container">
             <div class="welcome-panel">
+                <div class="system-branding desktop-branding">
+                    <img src="../assets/icons/slate2.svg" alt="SLATE Logo" class="system-logo">
+                    <span class="system-title">Freight Management System</span>
+                </div>
                 <img src="../assets/images/hero.png" alt="Freight Management System Logo" class="hero-image">
             </div>
             <div class="login-panel">
@@ -121,6 +132,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+
+    <footer class="page-footer">
+        © 2025 SLATE Freight Management System. All rights reserved.
+    </footer>
+
     <script>
         lucide.createIcons();
         

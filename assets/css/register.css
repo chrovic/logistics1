@@ -70,6 +70,81 @@ body {
     justify-content: center;
     padding: 40px;
     background: linear-gradient(135deg, rgba(0,114,255,0.2), rgba(0,198,255,0.2));
+    position: relative;
+}
+
+/* Mobile header - only visible on mobile */
+.mobile-header {
+    display: block;
+    position: sticky;
+    top: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 8px 20px;
+    z-index: 1000;
+}
+
+/* Desktop branding - hidden on mobile */
+.desktop-branding {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .mobile-header {
+        display: none;
+    }
+    
+    .desktop-branding {
+        display: flex;
+    }
+}
+
+.system-branding {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    z-index: 2;
+}
+
+.mobile-header .system-branding {
+    position: relative;
+    top: auto;
+    left: auto;
+}
+
+.system-logo {
+    width: 52px;
+    height: 52px;
+    max-width: 52px;
+    max-height: 52px;
+    object-fit: contain;
+}
+
+.system-title {
+    font-size: 0.93rem;
+    font-weight: 400;
+    color: #ececec;
+    white-space: nowrap;
+}
+
+.page-footer {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #ececec;
+    text-align: center;
+    z-index: 1000;
+    background: none;
+    border: none;
+    padding: 20px 0;
+    margin: 0;
 }
 
 .welcome-panel .hero-image {
