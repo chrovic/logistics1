@@ -560,24 +560,37 @@ window.addEventListener('popstate', () => {
 });
 
 // Re-initialize when any modal is shown (generic approach)
-const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-            if (node.nodeType === 1) { // Element node
-                // Check if it's a modal or contains datetime inputs
-                if (node.querySelector && node.querySelector('input[type="datetime-local"].custom-datetime-picker-input')) {
-                    requestAnimationFrame(reinitializeCustomDateTimePickers);
+const initMutationObserver = () => {
+    if (typeof MutationObserver !== 'undefined' && document.body) {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === 1) { // Element node
+                            // Check if it's a modal or contains datetime inputs
+                            if (node.querySelector && node.querySelector('input[type="datetime-local"].custom-datetime-picker-input')) {
+                                requestAnimationFrame(reinitializeCustomDateTimePickers);
+                            }
+                        }
+                    });
                 }
-            }
+            });
         });
-    });
-});
 
-// Start observing
-observer.observe(document.body, {
-    childList: true,
-    subtree: true
-});
+        // Start observing
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
+};
+
+// Initialize observer when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMutationObserver);
+} else {
+    initMutationObserver();
+}
 
 // Close the CustomDateTimePicker class declaration guard
 } 

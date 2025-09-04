@@ -60,10 +60,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $supplier_id = getSupplierIdFromUsername($_SESSION['username']);
 
     if ($supplier_id && createBid($po_id, $supplier_id, $bid_amount, $notes)) {
-                    $_SESSION['message'] = 'Your bid has been submitted successfully! You will be notified if your bid is awarded or rejected.';
+        $_SESSION['message'] = 'Your bid has been submitted successfully! You will be notified if your bid is awarded or rejected.';
         $_SESSION['message_type'] = 'success';
     } else {
-        $_SESSION['message'] = 'Failed to submit your bid. Please try again or contact support if the issue persists.';
+        // Check if the PO still exists and is still open for bidding
+        $conn = getDbConnection();
+        $check_stmt = $conn->prepare("SELECT status, ends_at FROM purchase_orders WHERE id = ?");
+        $check_stmt->bind_param("i", $po_id);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+        
+        if ($check_result->num_rows > 0) {
+            $po_data = $check_result->fetch_assoc();
+            
+            if ($po_data['status'] !== 'Open for Bidding') {
+                $_SESSION['message'] = 'This bidding opportunity is no longer open. The bidding period has ended.';
+            } elseif (!empty($po_data['ends_at'])) {
+                $deadline = new DateTime($po_data['ends_at'], new DateTimeZone('UTC'));
+                $now = new DateTime('now', new DateTimeZone('Asia/Manila'));
+                $now_utc = $now->setTimezone(new DateTimeZone('UTC'));
+                
+                if ($deadline <= $now_utc) {
+                    $_SESSION['message'] = 'The deadline for this bidding opportunity has passed. You can no longer submit bids.';
+                } else {
+                    $_SESSION['message'] = 'Failed to submit your bid. Please try again or contact support if the issue persists.';
+                }
+            } else {
+                $_SESSION['message'] = 'Failed to submit your bid. Please try again or contact support if the issue persists.';
+            }
+        } else {
+            $_SESSION['message'] = 'This bidding opportunity no longer exists.';
+        }
+        
+        $check_stmt->close();
+        $conn->close();
         $_SESSION['message_type'] = 'error';
     }
     // Redirect to prevent form resubmission
@@ -174,10 +204,13 @@ $currentPage = basename($_SERVER['SCRIPT_NAME']);
                                     <td class="font-semibold"><?php echo htmlspecialchars($po['item_name']); ?></td>
                                     <td><?php echo $po['quantity']; ?></td>
                                     <td class="text-gray-600"><?php echo date("F j, Y", strtotime($po['order_date'])); ?></td>
-                                    <td class="text-gray-600">
+                                    <td class="deadline-cell text-gray-600" data-deadline="<?php echo $po['ends_at'] ? $po['ends_at'] : ''; ?>" data-po-id="<?php echo $po['id']; ?>">
                                         <?php 
                                         if ($po['ends_at']): 
-                                            echo date("M j, Y g:i A", strtotime($po['ends_at'])); 
+                                            echo '<div class="countdown-display" data-target="' . $po['ends_at'] . '">';
+                                            echo date("M j, Y g:i A", strtotime($po['ends_at']));
+                                            echo '<div class="countdown-timer text-xs text-gray-500 mt-1"></div>';
+                                            echo '</div>';
                                         else: 
                                             echo '<span class="text-gray-400">No deadline</span>';
                                         endif; 
@@ -246,6 +279,7 @@ $currentPage = basename($_SERVER['SCRIPT_NAME']);
     
     <script src="../assets/js/custom-alerts.js"></script>
     <script src="../assets/js/script.js"></script>
+    <script src="../assets/js/deadline-countdown.js"></script>
     
     <?php if (!empty($message)): ?>
     <script>

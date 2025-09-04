@@ -52,9 +52,9 @@ try {
     // Get fresh bid data
     $bids = getBidsForPO($po_id);
     
-    // Get PO status
+    // Get PO status and deadline
     $conn = getDbConnection();
-    $stmt = $conn->prepare("SELECT status FROM purchase_orders WHERE id = ?");
+    $stmt = $conn->prepare("SELECT status, ends_at FROM purchase_orders WHERE id = ?");
     $stmt->bind_param("i", $po_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -66,10 +66,22 @@ try {
         throw new Exception('Purchase order not found');
     }
     
+    // Check if deadline has passed (using Philippines timezone)
+    $is_expired = false;
+    if (!empty($po['ends_at'])) {
+        // Parse the database datetime as if it's in Philippines timezone, then convert to UTC for comparison
+        $deadline = new DateTime($po['ends_at'], new DateTimeZone('Asia/Manila'));
+        $deadline_utc = $deadline->setTimezone(new DateTimeZone('UTC'));
+        $now_utc = new DateTime('now', new DateTimeZone('UTC'));
+        $is_expired = $deadline_utc <= $now_utc;
+    }
+    
     echo json_encode([
         'success' => true,
         'bids' => $bids,
-        'po_status' => $po['status']
+        'po_status' => $po['status'],
+        'ends_at' => $po['ends_at'],
+        'is_expired' => $is_expired
     ]);
     
 } catch (Exception $e) {

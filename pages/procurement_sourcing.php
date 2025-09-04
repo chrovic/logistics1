@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $quantity = $_POST['quantity_po'] ?? 0;
         $ends_at = $_POST['ends_at_po'] ?? null;
         if (createPurchaseOrder(null, $itemName, $quantity, $ends_at)) {
-             $_SESSION['flash_message'] = "Purchase Order for <strong>" . htmlspecialchars($itemName) . "</strong> created and is pending approval.";
+             $_SESSION['flash_message'] = "Purchase order for <strong>" . htmlspecialchars($itemName) . "</strong> created and is available for bidding.";
              $_SESSION['flash_message_type'] = 'success';
         } else {
             $_SESSION['flash_message'] = "Failed to create Purchase Order.";
@@ -241,12 +241,13 @@ foreach ($purchaseOrders as $po) {
                     <th>Quantity</th>
                     <th>Status</th>
                     <th>Order Date</th>
+                    <th>Deadline</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   <?php if (empty($purchaseOrders)): ?>
-                    <tr><td colspan="6" class="table-empty">No purchase orders found.</td></tr>
+                    <tr><td colspan="7" class="table-empty">No purchase orders found.</td></tr>
                   <?php else: foreach ($purchaseOrders as $po): ?>
                       <tr>
                         <td>#<?php echo $po['id']; ?></td>
@@ -257,18 +258,31 @@ foreach ($purchaseOrders as $po) {
                                 <?php if ($po['status'] === 'Pending') echo 'bg-yellow-100 text-yellow-700';
                                       elseif ($po['status'] === 'Open for Bidding') echo 'bg-blue-100 text-blue-700';
                                       elseif ($po['status'] === 'Awarded') echo 'bg-green-100 text-green-700';
+                                      elseif ($po['status'] === 'Bidding Closed') echo 'bg-red-100 text-red-700';
                                       else echo 'bg-gray-100 text-gray-700'; ?>">
                                 <?php echo htmlspecialchars($po['status']); ?>
                             </span>
                         </td>
                         <td><?php echo date("M j, Y", strtotime($po['order_date'])); ?></td>
+                        <td class="deadline-cell" data-deadline="<?php echo $po['ends_at'] ? $po['ends_at'] : ''; ?>" data-po-id="<?php echo $po['id']; ?>">
+                            <?php 
+                            if ($po['ends_at']): 
+                                echo '<div class="countdown-display" data-target="' . $po['ends_at'] . '">';
+                                echo date("M j, Y g:i A", strtotime($po['ends_at']));
+                                echo '<div class="countdown-timer text-xs text-gray-500 mt-1"></div>';
+                                echo '</div>';
+                            else: 
+                                echo '<span class="text-[--placeholder-color]">No deadline</span>';
+                            endif; 
+                            ?>
+                        </td>
                         <td>
                             <?php if ($po['status'] === 'Pending'): ?>
                                 <form method="POST" class="form-no-margin">
                                     <input type="hidden" name="po_id" value="<?php echo $po['id']; ?>">
                                     <button type="submit" name="action" value="open_for_bidding" class="btn-primary btn-small">Open for Bidding</button>
                                 </form>
-                            <?php elseif ($po['status'] === 'Open for Bidding' || $po['status'] === 'Awarded'): ?>
+                            <?php elseif ($po['status'] === 'Open for Bidding' || $po['status'] === 'Awarded' || $po['status'] === 'Bidding Closed'): ?>
                                 <button class="btn-primary btn-small" onclick='openViewBidsModal(<?php echo $po["id"]; ?>, <?php echo json_encode($bids_by_po[$po["id"]] ?? []); ?>, "<?php echo $po["status"]; ?>")'>
                                     View Bids (<?php echo count($bids_by_po[$po['id']] ?? []); ?>)
                                 </button>
@@ -335,11 +349,12 @@ foreach ($purchaseOrders as $po) {
 
   <?php include 'modals/psm.php'; ?>
 
-  <script src="../assets/js/custom-alerts.js"></script>
-  <script src="../assets/js/sidebar.js"></script>
-  <script src="../assets/js/sidebar-tooltip.js"></script>
-  <script src="../assets/js/script.js"></script>
-  <script src="../assets/js/procurement.js"></script>
+    <script src="../assets/js/custom-alerts.js"></script>
+    <script src="../assets/js/sidebar.js"></script>
+    <script src="../assets/js/sidebar-tooltip.js"></script>
+    <script src="../assets/js/script.js"></script>
+    <script src="../assets/js/procurement.js"></script>
+    <script src="../assets/js/deadline-countdown.js"></script>
   <script>
     lucide.createIcons();
     
@@ -392,7 +407,8 @@ foreach ($purchaseOrders as $po) {
         try {
             // Add a minimum delay to show the loading animation for at least 1.05 seconds
             const minDelay = new Promise(resolve => setTimeout(resolve, 1050));
-            const fetchData = fetch(`../includes/ajax/get_bids.php?po_id=${po_id}`);
+            // Fetch fresh bid data
+            const fetchData = fetch(`../includes/ajax/get_bids.php?po_id=${po_id}&_t=${Date.now()}`);
             
             const [, response] = await Promise.all([minDelay, fetchData]);
             const result = await response.json();
@@ -405,7 +421,21 @@ foreach ($purchaseOrders as $po) {
             
             container.innerHTML = '';
             if (!freshBids || freshBids.length === 0) {
-                container.innerHTML = '<p class="text-[var(--placeholder-color)] text-center py-8">No bids have been submitted for this item yet.</p>';
+                // If expired but status hasn't been updated, force a status update
+                if (result.is_expired && result.po_status === 'Open for Bidding') {
+                    // Trigger status update
+                    fetch('../includes/ajax/deadline_handler.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `action=close_expired_bidding&po_id=${po_id}`
+                    });
+                }
+                
+                if (result.po_status === 'Bidding Closed' || result.po_status === 'Closed' || result.po_status === 'Expired' || result.is_expired) {
+                    container.innerHTML = '<p class="text-[var(--placeholder-color)] text-center py-8">Bidding for this item has been closed. No bids were received before the deadline.</p>';
+                } else {
+                    container.innerHTML = '<p class="text-[var(--placeholder-color)] text-center py-8">No bids have been submitted for this item yet.</p>';
+                }
             } else {
                 freshBids.forEach(bid => {
                     const isAwarded = bid.status === 'Awarded';
@@ -414,7 +444,7 @@ foreach ($purchaseOrders as $po) {
                     bidElement.className = `border rounded-lg p-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border-[var(--card-border)] bg-[var(--card-bg)]`;
 
                     let actionButtons = '';
-                    if (window.currentPOStatus === 'Open for Bidding' && bid.status === 'Pending') {
+                    if ((window.currentPOStatus === 'Open for Bidding' || window.currentPOStatus === 'Bidding Closed') && bid.status === 'Pending') {
                         actionButtons = `
                             <div class="flex gap-3 justify-end sm:justify-start">
                                 <button type="button" class="btn-primary" onclick="awardBid(${bid.id}, ${po_id}, ${bid.supplier_id}, this)">
@@ -443,8 +473,7 @@ foreach ($purchaseOrders as $po) {
                 });
             }
         } catch (error) {
-            console.error('Error loading bids:', error);
-            container.innerHTML = `<div class="text-center py-8 text-red-500"><i class="fas fa-exclamation-triangle text-2xl mb-2"></i><p>Failed to load bids: ${error.message}</p></div>`;
+            container.innerHTML = `<div class="text-center py-8 text-red-500"><i class="fas fa-exclamation-triangle text-2xl mb-2"></i><p>Failed to load bids. Please try again.</p></div>`;
         }
     }
 

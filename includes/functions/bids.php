@@ -9,8 +9,41 @@ require_once __DIR__ . '/terms_generate.php';
  */
 function getOpenForBiddingPOs() {
     $conn = getDbConnection();
-    $result = $conn->query("SELECT * FROM purchase_orders WHERE status = 'Open for Bidding' ORDER BY order_date DESC");
+    
+    // Get current time in Philippines timezone converted to UTC
+    $now = new DateTime('now', new DateTimeZone('Asia/Manila'));
+    $now_utc = $now->setTimezone(new DateTimeZone('UTC'));
+    $current_time = $now_utc->format('Y-m-d H:i:s');
+    
+    // Select POs that are open for bidding and either have no deadline or deadline hasn't passed
+    $query = "SELECT * FROM purchase_orders 
+              WHERE status = 'Open for Bidding' 
+              AND (ends_at IS NULL OR ends_at > ?) 
+              ORDER BY order_date DESC";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("s", $current_time);
+    $stmt->execute();
+    $result = $stmt->get_result();
     $pos = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    $stmt->close();
+    
+    // Update any expired POs to 'Bidding Closed' status
+    $update_query = "UPDATE purchase_orders 
+                     SET status = 'Bidding Closed' 
+                     WHERE status = 'Open for Bidding' 
+                     AND ends_at IS NOT NULL 
+                     AND ends_at <= ?";
+    
+    $update_stmt = $conn->prepare($update_query);
+    $update_stmt->bind_param("s", $current_time);
+    $update_stmt->execute();
+    
+    if ($update_stmt->affected_rows > 0) {
+        // POs auto-closed due to deadline expiry
+    }
+    
+    $update_stmt->close();
     $conn->close();
     return $pos;
 }
@@ -21,12 +54,25 @@ function getOpenForBiddingPOs() {
  */
 function getOpenForBiddingPOsWithoutBids() {
     $conn = getDbConnection();
+    
+    // Get current time in Philippines timezone converted to UTC
+    $now = new DateTime('now', new DateTimeZone('Asia/Manila'));
+    $now_utc = $now->setTimezone(new DateTimeZone('UTC'));
+    $current_time = $now_utc->format('Y-m-d H:i:s');
+    
     $sql = "SELECT po.* FROM purchase_orders po 
             LEFT JOIN bids b ON po.id = b.po_id 
-            WHERE po.status = 'Open for Bidding' AND b.id IS NULL 
+            WHERE po.status = 'Open for Bidding' 
+            AND b.id IS NULL 
+            AND (po.ends_at IS NULL OR po.ends_at > ?) 
             ORDER BY po.order_date DESC";
-    $result = $conn->query($sql);
+    
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $current_time);
+    $stmt->execute();
+    $result = $stmt->get_result();
     $pos = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    $stmt->close();
     $conn->close();
     return $pos;
 }
@@ -43,7 +89,47 @@ function createBid($po_id, $supplier_id, $bid_amount, $notes) {
     if (empty($po_id) || empty($supplier_id) || !is_numeric($bid_amount) || $bid_amount <= 0) {
         return false;
     }
+    
     $conn = getDbConnection();
+    
+    // Check if the PO is still open for bidding and deadline hasn't passed
+    $check_stmt = $conn->prepare("SELECT status, ends_at FROM purchase_orders WHERE id = ?");
+    $check_stmt->bind_param("i", $po_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+    
+    if ($check_result->num_rows === 0) {
+        $check_stmt->close();
+        $conn->close();
+        return false; // PO doesn't exist
+    }
+    
+    $po_data = $check_result->fetch_assoc();
+    $check_stmt->close();
+    
+    // Check if PO is still open for bidding
+    if ($po_data['status'] !== 'Open for Bidding') {
+        $conn->close();
+        return false; // PO is no longer open for bidding
+    }
+    
+    // Check if deadline has passed (using Philippines timezone)
+    if (!empty($po_data['ends_at'])) {
+        $deadline = new DateTime($po_data['ends_at'], new DateTimeZone('UTC'));
+        $now = new DateTime('now', new DateTimeZone('Asia/Manila'));
+        $now_utc = $now->setTimezone(new DateTimeZone('UTC'));
+        
+        if ($deadline <= $now_utc) {
+            // Update PO status to 'Bidding Closed' if deadline has passed
+            $update_stmt = $conn->prepare("UPDATE purchase_orders SET status = 'Bidding Closed' WHERE id = ?");
+            $update_stmt->bind_param("i", $po_id);
+            $update_stmt->execute();
+            $update_stmt->close();
+            
+            $conn->close();
+            return false; // Deadline has passed
+        }
+    }
     $stmt = $conn->prepare("INSERT INTO bids (po_id, supplier_id, bid_amount, notes) VALUES (?, ?, ?, ?)");
     $stmt->bind_param("iids", $po_id, $supplier_id, $bid_amount, $notes);
     $success = $stmt->execute();

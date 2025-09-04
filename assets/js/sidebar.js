@@ -331,6 +331,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof window.initAdminNotifications === 'function') {
                         window.initAdminNotifications();
                     }
+                    
+                    // Reinitialize deadline countdown system
+                    if (typeof window.initDeadlineCountdown === 'function') {
+                        window.initDeadlineCountdown();
+                    }
                 });
                 // Call page-specific initializer based on target URL (run defensively twice for timing)
                 try {

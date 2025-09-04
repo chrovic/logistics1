@@ -165,7 +165,6 @@ function awardPOToSupplier($po_id, $supplier_id, $bid_id) {
         return true;
     } catch (Exception $e) {
         $conn->rollback();
-        // For debugging, you can log the error: error_log($e->getMessage());
         return false;
     }
 }

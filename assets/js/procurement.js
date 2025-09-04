@@ -137,6 +137,11 @@ function initProcurement() {
         createPOBtn.addEventListener('click', openCreatePOModal);
     }
     
+    // Initialize deadline countdown system
+    if (typeof window.initDeadlineCountdown === 'function') {
+        window.initDeadlineCountdown();
+    }
+    
     // Initialize dropdown functionality
     initSupplierDropdowns();
     

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Sep 03, 2025 at 09:30 PM
+-- Generation Time: Sep 04, 2025 at 08:10 AM
 -- Server version: 8.0.42
 -- PHP Version: 8.3.20
 
@@ -36,13 +36,6 @@ CREATE TABLE `admin_notifications` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 
---
--- Dumping data for table `admin_notifications`
---
-
-INSERT INTO `admin_notifications` (`id`, `message`, `type`, `related_id`, `related_type`, `created_at`) VALUES
-(32, 'New bid submitted: Summit Bulk Storage, Inc. bid ₱8,000.00 for \'Bubble Wrap Rolls\' (PO #118)', 'info', 54, 'bid', '2025-09-03 21:20:05');
-
 -- --------------------------------------------------------
 
 --
@@ -56,13 +49,6 @@ CREATE TABLE `admin_notification_read_status` (
   `is_read` tinyint(1) NOT NULL DEFAULT '0',
   `read_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-
---
--- Dumping data for table `admin_notification_read_status`
---
-
-INSERT INTO `admin_notification_read_status` (`id`, `notification_id`, `user_id`, `is_read`, `read_at`) VALUES
-(116, 32, 1, 1, '2025-09-03 21:20:16');
 
 -- --------------------------------------------------------
 
@@ -759,7 +745,8 @@ INSERT INTO `purchase_orders` (`id`, `supplier_id`, `item_name`, `quantity`, `st
 (109, NULL, 'Packing Tape Rolls', 550, 'Awarded', '2025-08-22 08:00:00', NULL, NULL, NULL),
 (110, NULL, 'Cardboard Boxes (Large)', 1000, 'Awarded', '2025-05-01 00:00:00', NULL, NULL, NULL),
 (111, NULL, 'Cardboard Boxes (Large)', 1200, 'Awarded', '2025-07-10 05:00:00', NULL, NULL, NULL),
-(118, NULL, 'Bubble Wrap Rolls', 15, 'Open for Bidding', '2025-09-03 20:11:23', '2025-09-05 12:10:00', NULL, NULL);
+(118, NULL, 'Bubble Wrap Rolls', 15, 'Open for Bidding', '2025-09-03 20:11:23', '2025-09-05 12:10:00', NULL, NULL),
+(129, NULL, 'Heat Treated Pallets (ISPM-15)', 500, 'Bidding Closed', '2025-09-04 07:58:34', '2025-09-04 16:00:00', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -985,13 +972,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `admin_notifications`
 --
 ALTER TABLE `admin_notifications`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT for table `admin_notification_read_status`
 --
 ALTER TABLE `admin_notification_read_status`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=117;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=118;
 
 --
 -- AUTO_INCREMENT for table `assets`
@@ -1009,13 +996,13 @@ ALTER TABLE `asset_usage_logs`
 -- AUTO_INCREMENT for table `bids`
 --
 ALTER TABLE `bids`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
 
 --
 -- AUTO_INCREMENT for table `documents`
 --
 ALTER TABLE `documents`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `inventory`
@@ -1045,7 +1032,7 @@ ALTER TABLE `maintenance_schedules`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=159;
 
 --
 -- AUTO_INCREMENT for table `procurement_requests`
@@ -1063,7 +1050,7 @@ ALTER TABLE `projects`
 -- AUTO_INCREMENT for table `purchase_orders`
 --
 ALTER TABLE `purchase_orders`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=119;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=130;
 
 --
 -- AUTO_INCREMENT for table `suppliers`
